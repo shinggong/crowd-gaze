@@ -224,12 +224,13 @@ for (let i = 0; i < COUNT; i++) {
   frames.push(img);
 }
 
+const BOTTOM_CUT = .2;              // 첫 영상 아래쪽(초록 벽)을 영상 높이의 20% 잘라냄
 let R, SEAM;                        // 영상 위치, 연결부 높이
 function resize() {
   const dpr = Math.min(devicePixelRatio || 1, 2);
   // 첫 화면 배치는 화면 크기 기준, 화면 아래로 넘치는 영상 하단은 자르지 않고 스크롤로 이어서 보여줌
   R = rect(frames[0], innerWidth * dpr, innerHeight * dpr);
-  const total = Math.max(innerHeight * dpr, Math.floor(R[1] + R[3]));
+  const total = Math.max(innerHeight * dpr, Math.floor(R[1] + R[3] * (1 - BOTTOM_CUT)));   // 영상 아래 초록 벽 일부 잘라냄
   stage.width = innerWidth * dpr; stage.height = total;
   hero.style.height = total / dpr + 'px';
   SEAM = R[3] * 0.045;
@@ -385,13 +386,15 @@ function keyframes() {
   // 'the ball.'의 두 단어 사이 위쪽 (글자 윗부분에 살짝 겹치는 자리)
   // 피그마: 'follow'(360px) 기준 공 중심 = 글자 왼쪽 + 2.76em, 위 + 0.71em, 지름 1.04em → 'w' 끝에 걸침
   const f = follow, gx = (f.px + f.fs * 2.76) / VW, gy = (f.py + f.fs * .71) / VH, gd = f.fs * 1.04 / VM;
-  // 오른쪽 밖 → 왼쪽으로 들어와 멈춤 → 아래로 쭉 내려감 (방향 전환 최소화)
+  // 사용자가 그려준 경로: 오른쪽 위 화면 밖 → 'w' 자리를 지나 왼쪽 아래로 휘어 'the' 왼쪽을 따라 내려감 → 오른쪽으로 꺾이며 화면 아래로 빠짐
   return [
-    [-.12, 1.25, .18, .10],   // 스토리가 화면에 올라오기 시작할 때 화면 밖 오른쪽
-    [-.05, .88, .24, gd * .6],
-    [ .00, gx, gy, gd],       // 'follow' 끝 글자를 스치며 지나감 (멈추지 않음)
-    [ .09, gx - .14, gy + .07, gd * .92],
-    [ .18, .26, .33, .17],    // 왼쪽으로 크게 흘러감
+    [-.12, .80, -.30, gd * .8],   // 오른쪽 위 화면 밖
+    [-.05, .64, .02, gd * .9],
+    [ .00, gx, gy, gd],           // 'follow'의 w 자리
+    [ .05, gx - .06, gy + .12, gd],   // 왼쪽 아래로 휘며 'the' 왼쪽을 따라 내려감
+    [ .11, gx - .11, gy + .32, gd * .97],
+    [ .16, gx - .08, gy + .50, gd * .93],
+    [ .21, gx + .10, 1.15, gd * .9],  // 오른쪽으로 꺾이며 화면 아래로 빠짐
     [ .29, .58, .38, .13],    // 오른쪽으로 돌아오며 굵은 문단 위를 지나감
     [V_IN - .04, lx + .04, ly - .06, .075], // 올라오는 테니스 영상 쪽으로 내려가
     [V_IN, lx, ly, ld],       // 영상 속 공 자리에 내려앉음
