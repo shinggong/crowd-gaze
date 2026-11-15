@@ -400,8 +400,8 @@ function keyframes() {
     [ .11, gx - .11, gy + .32, gd * .97],
     [ .16, gx - .08, gy + .50, gd * .93],
     [ .21, gx + .10, 1.15, gd * .9],  // 오른쪽으로 꺾이며 화면 아래로 빠짐
-    [BA, BX0 / VW, (bland(0) - BH) / VH, BD / VM],   // 굵은 문단 위에서 튀기 시작 (공중)
-    [BB, BX1 / VW, (bland(LN.length - 1) - BH) / VH, BD / VM],   // 마지막 줄을 튀고 공중으로    // 오른쪽으로 돌아오며 굵은 문단 위를 지나감
+    [BA, BX0 / VW, (bland(0) - BH) / VH, BZ / VM],   // 굵은 문단 위에서 튀기 시작 (공중)
+    [BB, BX1 / VW, (bland(LN.length - 1) - BH) / VH, BZ / VM],   // 마지막 줄을 튀고 공중으로    // 오른쪽으로 돌아오며 굵은 문단 위를 지나감
     [V_IN - .04, lx + .04, ly - .06, .075], // 올라오는 테니스 영상 쪽으로 내려가
     [V_IN, lx, ly, ld],       // 영상 속 공 자리에 내려앉음
     [1.10, lx, ly, ld],
@@ -412,17 +412,18 @@ const BA = .262, BB = .338;                       // 튀는 구간 (텍스트 �
 const boldT = texts.find(t => t.el.classList.contains('bold'));
 const LN = [...boldT.el.querySelectorAll('.ln')];
 const WORDS = [...boldT.el.querySelectorAll('.w')].map(el => ({ el, line: LN.indexOf(el.closest('.ln')) }));
-let BX0 = 0, BX1 = 0, BH = 0, BD = 0;
+let BX0 = 0, BX1 = 0, BH = 0, BD = 0, BZ = 0;
 function bland(i) { return boldT.py + LN[i].offsetTop + boldT.fs * .3 - BD / 2; }   // i번째 줄 글자 윗면에 공이 닿는 중심 y
 function bounceSetup() {
-  BD = boldT.fs * 1.5; BH = VH * .13;
+  BD = boldT.fs * 1.5; BH = VH * .04; BZ = VM * .9;   // BZ: 화면 쪽으로 튀어나올 때 최대 지름
   BX0 = boldT.px + boldT.w * .16; BX1 = boldT.px + boldT.w * .84;
 }
 function bounce(p) {                               // 튀는 구간 공 위치 (뾰족하게 착지하는 포물선)
   const n = LN.length, u = clamp((p - BA) / (BB - BA)), ph = u * n + .5, j = Math.min(Math.floor(ph), n), s = ph - j;
   const from = bland(clamp(j - 1, 0, n - 1)), to = bland(clamp(j, 0, n - 1));
   const base = from + (to - from) * s;
-  return [BX0 + (BX1 - BX0) * u, base - BH * (1 - 4 * s * (1 - s)) ];
+  const h = 4 * s * (1 - s);                       // 0: 글자에 착지 / 1: 가장 높이 (화면 쪽으로 가장 가까움)
+  return [BX0 + (BX1 - BX0) * u, base - BH * h, BD + (BZ - BD) * h * h];   // Z축: 위로 튈수록 화면 밖으로 나올 듯 커짐
 }
 const hitP = k => BA + (k + .5) / LN.length * (BB - BA);   // k번째 줄에 착지하는 진행도
 function scatter(p) {
@@ -560,7 +561,7 @@ function frame() {
   bounceSetup();
   const K = keyframes();
   let [bx, by, bd] = path(p, K);
-  if (p > BA && p < BB) { const [x, y] = bounce(p); bx = x / VW; by = y / VH; bd = BD / VM; }
+  if (p > BA && p < BB) { const [x, y, d] = bounce(p); bx = x / VW; by = y / VH; bd = d / VM; }
   scatter(p);
   const D = bd * VM, X = bx * VW, Y = by * VH;
   // 스토리가 화면에 다 올라오기 전엔 공 위치를 화면 기준으로 (그래야 화면 밖에서 들어옴)
