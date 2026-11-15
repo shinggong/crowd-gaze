@@ -100,6 +100,7 @@
     /* 영상 가장자리를 배경색으로 부드럽게 (브라우저마다 영상 색이 살짝 달라 박스 경계가 보이는 것 방지) */
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(transparent, #000 9%, #000 91%, transparent);
     -webkit-mask-composite: source-in; pointer-events: none; mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(transparent, #000 9%, #000 91%, transparent); mask-composite: intersect; }
+  .para.dark { font: italic 700 clamp(12px, 1.05vw, 16px)/1.3 "Alegreya", Georgia, serif; }   /* follow와 같은 글꼴, 작게 */
   .dark { color: #2f4a35; transition: color .5s; } .dark.lite { color: #f0e5ce; }
 
   /* 타이틀 등장: 줄마다 아래에서 밀려 올라오고, 안내 문구는 뒤이어 페이드 */
@@ -133,7 +134,15 @@
   #menu.live { pointer-events: auto; }
   #menuRows { position: absolute; left: 3.49vw; right: 3.7vw; top: 6.76vh; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1.85vh; }
   #menuRows button { all: unset; box-sizing: border-box; width: 100%; height: min(6.25vw, 11.1vh); display: flex; justify-content: space-between; align-items: flex-start;
-    overflow: hidden; border-bottom: 1px solid #f0e5ce; cursor: inherit; transition: color .25s; }
+    overflow: hidden; border-bottom: 1px solid #f0e5ce; cursor: inherit; transition: color .25s, height .7s cubic-bezier(.2,.85,.25,1); position: relative; }
+  /* 호버한 줄: 높이가 커지며 장면 사진이 아래에서 열림 */
+  #menuRows li.on button { height: min(15vw, 26vh); }
+  #menuRows .no, #menuRows .name { position: relative; z-index: 1; }
+  #menuRows .pic { position: absolute; left: 13%; top: 10%; height: 80%; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 6px; z-index: 0;
+    clip-path: inset(100% 0 0 0 round 6px); transition: clip-path .7s cubic-bezier(.2,.85,.25,1); }
+  #menuRows .pic i { position: absolute; inset: 0; background: center / cover no-repeat; transform: scale(1.18); transition: transform 1.1s cubic-bezier(.2,.85,.25,1); }
+  #menuRows li.on .pic { clip-path: inset(0 0 0 0 round 6px); }
+  #menuRows li.on .pic i { transform: none; }
   #menuRows .no { font-size: max(11px, min(1.61vw, 2.87vh)); line-height: normal; }
   #menuRows .name { font-size: min(7.47vw, 13.3vh); line-height: normal; white-space: nowrap; letter-spacing: -0.01em; }
   #menuRows li.on button { color: #dcff2e; }
@@ -336,7 +345,7 @@ const TEXTS = [
   ['<img src="img/emblem.png" alt="">', 'emblem', .5, .246, 'back', .26, .34, 'center'],
   ['Two players. One net.<br>Sixteen heads turning left,<br>right, left again —<br>and nobody dares to blink.', 'bold', .5, .499, 'back', .26, .34, 'center'],
   ['A ball crosses the net twice a second.<br>Every rally is a question the crowd answers with their necks.<br>Scroll — the match begins.', 'small', .5, .742, 'back', .26, .34, 'center'],
-  ['Sixteen strangers. One yellow ball.<br>Nobody blinks.', 'para dark', .5, .9, 'front', .40, .58, 'center'],
+  ['Sixteen strangers. One yellow ball.<br>Nobody blinks.', 'para dark', .5, .945, 'front', .40, .58, 'center'],
 ];
 // 순서: follow the ball → 텍스트 장면(.26~.34) → 테니스 영상 → 메뉴 → (sticky 풀리며 Contact로) (각 구간 = 화면에 꽉 차 있는 구간)
 const SLIDE = .06;
@@ -354,6 +363,7 @@ const mk = (html, cls, parent) => {
 const texts = TEXTS.map((t, i) => ({ el: mk(t[0], t[1], t[4] === 'front' ? front : back), x: t[2], y: t[3], a: t[5], b: t[6], align: t[7],
   depth: t[4] === 'front' ? 1 : .55, k: [.07, .045, .1][i % 3], sp: null }));
 // 'the ball.' 글자들: 공이 지나가면 공을 피해 좌우로 벌어짐
+texts[texts.length - 1].depth = 0;              // 영상 아래 문장: 코트와 겹치지 않게 시차 이동 없이 고정
 // 같은 장면 텍스트끼리 순서대로 등장 (0.09초 간격)
 { const seen = {}; texts.forEach(t => { const k = t.a; seen[k] = (seen[k] || 0); t.el.style.setProperty('--d', seen[k] * (k < 0 ? .06 : .12) + 's'); seen[k]++; }); }
 const follow = texts[0];                         // 공이 'follow' 끝에 걸쳐 떠 있음
@@ -748,6 +758,14 @@ const CH = [
   ['img/court.jpg', 'Say hello, then hit the neon balls around the screen.', ['Email', 'Clickable ball rain'], ['rally', 0]],
 ];
 const items = [...document.querySelectorAll('#menuRows li')];
+// 줄마다 장면 사진 (Follow: 진녹색 위 공, Contact: 네온 공 무늬)
+const PIC = [
+  'url(frames/f12.jpg) center 30% / cover no-repeat',
+  '#4a5639 url(img/ball.webp) center / 46% no-repeat',
+  'url(img/court.jpg) center / cover no-repeat',
+  '#4a5639 radial-gradient(circle, #dcff2e 0 47%, transparent 49%) 0 0 / 22% 35%',
+];
+items.forEach((li, i) => { const s = document.createElement('span'); s.className = 'pic'; s.innerHTML = `<i style="background:${PIC[i]}"></i>`; li.querySelector('button').prepend(s); });
 const desc = document.getElementById('menuDesc');
 function show(i) {
   items.forEach((li, j) => li.classList.toggle('on', i === j));
