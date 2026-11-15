@@ -292,7 +292,9 @@ function tick(now) {
     target = 0.5 + autoSide * (0.36 + Math.random() * 0.1);
     autoNext = now + 900 + Math.random() * 700;      // 0.9~1.6초 머문 뒤 반대쪽으로
   }
-  cur += (target - cur) * (moved ? 0.12 : 0.16);
+  const goal = Math.round(target * (COUNT - 1)) / (COUNT - 1);   // 멈출 땐 항상 한 장면에 딱 맞춤 (두 장면이 겹친 잔상 상태로 멈추지 않음)
+  cur += (goal - cur) * (moved ? 0.12 : 0.16);
+  if (Math.abs(goal - cur) < .002) cur = goal;
   if (scrollY < hero.offsetHeight) draw(cur);
   requestAnimationFrame(tick);
 }
