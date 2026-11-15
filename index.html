@@ -66,6 +66,8 @@
   .t .ln { display: block; overflow: hidden; padding-bottom: .06em; }
   .t .ln > span { display: inline-block; transform: translateY(110%); transition: transform .9s cubic-bezier(.2,.85,.25,1) calc(var(--d, 0s) + var(--i) * .08s); }
   .t.in .ln > span { transform: none; }
+  .t .w { display: inline-block; will-change: transform; }
+  .t.bold.scat .ln { overflow: visible; }   /* 공에 맞아 흩어질 땐 줄 마스크 해제 */
   /* 엠블럼: 돌면서 통통 튀어 커짐 */
   .t.emblem .rv { transform: scale(.3) rotate(-30deg); filter: none; transition: opacity .5s ease var(--d, 0s), transform 1.2s cubic-bezier(.34,1.56,.64,1) var(--d, 0s); }
   /* 작은 회색 글: 옆에서 살짝 밀려 들어옴 */
@@ -147,6 +149,8 @@
   #rallyTop a:hover, #rallyBottom a:hover { color: #dcff2e; }
   #rallyBottom { bottom: clamp(20px, 5vh, 48px); display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 5vw, 80px); }
   #rallyBottom p { margin: 0; max-width: 36em; }
+  #rally.cvtext #rallyBottom .rw { color: transparent; }   /* 실제 글씨는 캔버스에 그림 */
+  #rally.cvtext #rallyBottom a { text-decoration-color: transparent; }
   #rallyBottom p:first-child { font-size: clamp(13px, 1.25vw, 19px); line-height: 1.35; }
   @media (max-width: 760px) { #rallyTop { grid-template-columns: 1fr auto; } #rallyTop .mid { display: none; } #rallyBottom { grid-template-columns: 1fr; } }
 </style>
@@ -344,7 +348,7 @@ const END = .74;                               // 스크롤 끝 진행도 (메�
 const mk = (html, cls, parent) => {
   const e = document.createElement('div'); e.className = 't ' + cls;
   if (/\b(follow|copy)\b/.test(cls)) html = [...html].map((c, i) => `<span class="ch" style="--i:${i}">${c}</span>`).join('');          // 타이틀: 글자 단위
-  else if (/\bbold\b/.test(cls)) html = html.split('<br>').map((l, i) => `<span class="ln"><span style="--i:${i}">${l}</span></span>`).join('');  // 볼드: 줄 단위
+  else if (/\bbold\b/.test(cls)) html = html.split('<br>').map((l, i) => `<span class="ln"><span style="--i:${i}">${l.split(' ').map(w => `<span class="w">${w}</span>`).join(' ')}</span></span>`).join('');  // 볼드: 줄 단위
   e.innerHTML = `<span class="rv">${html}</span>`; parent.appendChild(e); return e; };
 // 글자 공간감: 각 글자가 스크롤을 조금씩 늦게(시간차) 따라오며 깊이에 따라 다른 속도로 위로 흘러감
 const texts = TEXTS.map((t, i) => ({ el: mk(t[0], t[1], t[4] === 'front' ? front : back), x: t[2], y: t[3], a: t[5], b: t[6], align: t[7],
@@ -371,6 +375,7 @@ function measure() {
   VW = innerWidth; VH = innerHeight; VM = Math.min(VW, VH);
   for (const t of texts) { t.w = t.el.offsetWidth; t.h = t.el.offsetHeight; }
   follow.fs = parseFloat(getComputedStyle(follow.el).fontSize);
+  boldT.fs = parseFloat(getComputedStyle(boldT.el).fontSize);
   // 테니스 영상: 코트가 화면에 다 보이게 (영상 배경 분홍 = 레이어 배경)
   const vw = Math.min(VW * .8, VH * .8 * 1278 / 720, 1278);   // 원본보다 커지지 않게 (화질)
   courtVideo.style.width = court0.style.width = vw + 'px'; CVW = vw;
@@ -395,11 +400,45 @@ function keyframes() {
     [ .11, gx - .11, gy + .32, gd * .97],
     [ .16, gx - .08, gy + .50, gd * .93],
     [ .21, gx + .10, 1.15, gd * .9],  // 오른쪽으로 꺾이며 화면 아래로 빠짐
-    [ .29, .58, .38, .13],    // 오른쪽으로 돌아오며 굵은 문단 위를 지나감
+    [BA, BX0 / VW, (bland(0) - BH) / VH, BD / VM],   // 굵은 문단 위에서 튀기 시작 (공중)
+    [BB, BX1 / VW, (bland(LN.length - 1) - BH) / VH, BD / VM],   // 마지막 줄을 튀고 공중으로    // 오른쪽으로 돌아오며 굵은 문단 위를 지나감
     [V_IN - .04, lx + .04, ly - .06, .075], // 올라오는 테니스 영상 쪽으로 내려가
     [V_IN, lx, ly, ld],       // 영상 속 공 자리에 내려앉음
     [1.10, lx, ly, ld],
   ];
+}
+// ── 굵은 문단 위 통통 튀기: 줄마다 한 번씩 착지, 착지한 줄의 단어들이 흩어짐 ──
+const BA = .262, BB = .338;                       // 튀는 구간 (텍스트 장면이 화면에 꽉 찬 동안)
+const boldT = texts.find(t => t.el.classList.contains('bold'));
+const LN = [...boldT.el.querySelectorAll('.ln')];
+const WORDS = [...boldT.el.querySelectorAll('.w')].map(el => ({ el, line: LN.indexOf(el.closest('.ln')) }));
+let BX0 = 0, BX1 = 0, BH = 0, BD = 0;
+function bland(i) { return boldT.py + LN[i].offsetTop + boldT.fs * .3 - BD / 2; }   // i번째 줄 글자 윗면에 공이 닿는 중심 y
+function bounceSetup() {
+  BD = boldT.fs * 1.5; BH = VH * .13;
+  BX0 = boldT.px + boldT.w * .16; BX1 = boldT.px + boldT.w * .84;
+}
+function bounce(p) {                               // 튀는 구간 공 위치 (뾰족하게 착지하는 포물선)
+  const n = LN.length, u = clamp((p - BA) / (BB - BA)), ph = u * n + .5, j = Math.min(Math.floor(ph), n), s = ph - j;
+  const from = bland(clamp(j - 1, 0, n - 1)), to = bland(clamp(j, 0, n - 1));
+  const base = from + (to - from) * s;
+  return [BX0 + (BX1 - BX0) * u, base - BH * (1 - 4 * s * (1 - s)) ];
+}
+const hitP = k => BA + (k + .5) / LN.length * (BB - BA);   // k번째 줄에 착지하는 진행도
+function scatter(p) {
+  const n = LN.length; let any = false;
+  for (const w of WORDS) {
+    const ph = hitP(w.line), a0 = clamp((p - ph) / .014);
+    if (a0 <= 0) { w.el.style.transform = ''; continue; }
+    any = true;
+    const a = 1 + 2.7 * Math.pow(a0 - 1, 3) + 1.7 * Math.pow(a0 - 1, 2);   // 살짝 튕기듯
+    const hx = BX0 + (BX1 - BX0) * ((w.line + .5) / n);                  // 착지한 x
+    const cx = boldT.px + w.el.offsetLeft + w.el.offsetWidth / 2;
+    const d = cx - hx, dir = Math.sign(d) || 1, fall = Math.exp(-Math.abs(d) / (boldT.fs * 4));
+    const fs = boldT.fs;
+    w.el.style.transform = `translate(${dir * a * (fs * .2 + fs * .9 * fall)}px, ${-a * fs * (.05 + .4 * fall)}px) rotate(${dir * a * (3 + 14 * fall)}deg)`;
+  }
+  boldT.el.classList.toggle('scat', any);
 }
 function catmull(p0, p1, p2, p3, t) {
   const t2 = t * t, t3 = t2 * t;
@@ -518,8 +557,11 @@ function frame() {
   }
 
   // ── 공 위치 ──
+  bounceSetup();
   const K = keyframes();
   let [bx, by, bd] = path(p, K);
+  if (p > BA && p < BB) { const [x, y] = bounce(p); bx = x / VW; by = y / VH; bd = BD / VM; }
+  scatter(p);
   const D = bd * VM, X = bx * VW, Y = by * VH;
   // 스토리가 화면에 다 올라오기 전엔 공 위치를 화면 기준으로 (그래야 화면 밖에서 들어옴)
   const lift = Math.max(0, sticky.getBoundingClientRect().top);
@@ -619,6 +661,22 @@ function draw() {
     c.fillStyle = '#dcff2e';
     c.beginPath(); c.arc(b.x, b.y, b.r, 0, Math.PI * 2); c.fill();
   }
+  // 하단 글씨: 캔버스에 직접 그려서 공과 겹친 부분은 뚫려 보이게 (커서와 같은 오버레이 느낌)
+  if (RW.length) {
+    const sr = sec.getBoundingClientRect();
+    c.globalCompositeOperation = 'xor'; c.textBaseline = 'alphabetic';
+    for (const w of RW) {
+      const r = w.el.getBoundingClientRect(), ps = getComputedStyle(w.el.parentElement);
+      c.globalAlpha = +getComputedStyle(w.el.closest('p')).opacity;
+      c.font = w.font; if ('letterSpacing' in c) c.letterSpacing = w.ls;
+      c.fillStyle = ps.color;
+      const m = c.measureText(w.txt), asc = m.fontBoundingBoxAscent || r.height * .78, desc = m.fontBoundingBoxDescent || r.height * .22;
+      const base = r.top - sr.top + (r.height - asc - desc) / 2 + asc;
+      c.fillText(w.txt, r.left - sr.left, base);
+      if (w.link) c.fillRect(r.left - sr.left, base + 3, r.width - (parseFloat(w.ls) || 0), 1);   // 링크 밑줄
+    }
+    c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+  }
   // 커서: 공과 겹친 부분은 뚫려 보이게 (오버레이 느낌)
   if (mouse.on) {
     c.globalCompositeOperation = 'xor'; c.fillStyle = '#dcff2e';
@@ -627,6 +685,25 @@ function draw() {
   }
 }
 const mouse = { x: 0, y: 0, on: false };
+// 하단 글씨를 단어 단위로 나눠 둠 (DOM 글씨는 투명하게 남겨 링크 클릭·선택은 그대로)
+const RW = [];
+{
+  const bottom = document.getElementById('rallyBottom'), walk = document.createTreeWalker(bottom, NodeFilter.SHOW_TEXT), nodes = [];
+  while (walk.nextNode()) nodes.push(walk.currentNode);
+  for (const n of nodes) {
+    const frag = document.createDocumentFragment();
+    n.textContent.split(/(\s+)/).forEach(part => {
+      if (!part) return;
+      if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+      const sp = document.createElement('span'); sp.className = 'rw'; sp.textContent = part; frag.appendChild(sp);
+    });
+    n.replaceWith(frag);
+  }
+  for (const el of bottom.querySelectorAll('.rw')) RW.push({ el, txt: el.textContent.toUpperCase(), link: !!el.closest('a') });
+  const fonts = () => RW.forEach(w => { const cs = getComputedStyle(w.el); w.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`; w.ls = cs.letterSpacing; });
+  fonts(); addEventListener('resize', fonts);
+  sec.classList.add('cvtext');
+}
 sec.addEventListener('pointermove', e => { const r = sec.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; mouse.on = e.pointerType === 'mouse'; sec.classList.toggle('cur', mouse.on); });
 sec.addEventListener('pointerleave', () => { mouse.on = false; sec.classList.remove('cur'); });
 
