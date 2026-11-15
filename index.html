@@ -197,7 +197,7 @@
 </section>
 <div id="loading">LOADING 0%</div>
 <script>
-const COUNT = 25;               // frames/f00 (왼쪽) ~ f24 (오른쪽)
+const COUNT = 36;               // frames/f00 (왼쪽) ~ f35 (오른쪽) — 고화질 영상 53~88번 프레임 전부 (장면 간 차이를 줄여 잔상 감소)
 const stage = document.getElementById('stage'), ctx = stage.getContext('2d');
 const hero = document.getElementById('hero');
 const loading = document.getElementById('loading');
@@ -278,7 +278,9 @@ function draw(pos) {
   const a = frames[i], b = frames[Math.min(i + 1, COUNT - 1)];
   ctx.clearRect(0, 0, W, H);
   paint(a, 1);
-  if (t > 0.001) paint(b, t);
+  // 겹치는 구간을 가운데 짧게만: 대부분은 한 장면만 선명하게 보이고, 넘어갈 때만 잠깐 섞임
+  const k = Math.min(1, Math.max(0, (t - .3) / .4)), tb = k * k * (3 - 2 * k);
+  if (tb > 0.001) paint(b, tb);
   ctx.globalAlpha = 1;
   if (wallLayer.height) ctx.drawImage(wallLayer, 0, 0);
 }
