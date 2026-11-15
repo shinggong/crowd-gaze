@@ -559,14 +559,13 @@ document.readyState === 'complete' ? start() : addEventListener('load', start);
 (() => {
 const sec = document.getElementById('rally'), cv = document.getElementById('rallyCanvas'), c = cv.getContext('2d');
 const N = 28;                                  // 공 개수
-let W, H, F, dpr, balls = [], started = false, visible = false, last = 0;   // F: 공이 쌓이는 바닥 (하단 문단 위)
+let W, H, F, dpr, balls = [], started = false, visible = false, last = 0;   // F: 공이 쌓이는 바닥 (화면 맨 아래)
 
 function size() {
   dpr = Math.min(devicePixelRatio || 1, 2);
   W = sec.clientWidth; H = sec.clientHeight;
   cv.width = W * dpr; cv.height = H * dpr;
-  const bb = document.getElementById('rallyBottom');
-  F = bb ? bb.offsetTop - 18 : H;
+  F = H;                                                  // 화면 맨 아래까지 떨어짐 (하단 글 위로 덮음)
 }
 addEventListener('resize', size); size();
 
