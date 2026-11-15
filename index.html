@@ -91,14 +91,14 @@
   #rally.in #rallyText .ml > span { transform: none; }
   #rally.in #rallyText > *, #rally.in #rallyTop > *, #rally.in #rallyBottom > * { opacity: 1; transform: none; }
   .ch { display: inline-block; will-change: transform; }
-  #court { z-index: 3; background: #e48080; opacity: 0; display: grid; place-items: center; }
+  #court { z-index: 3; background: #e48080; opacity: 0; will-change: clip-path; display: grid; place-items: center; }
   #court > * { grid-area: 1 / 1; }
   #court img { width: 100%; height: auto; display: block; }
   #court video, #court img { display: block; will-change: transform;
     /* 영상 가장자리를 배경색으로 부드럽게 (브라우저마다 영상 색이 살짝 달라 박스 경계가 보이는 것 방지) */
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(transparent, #000 9%, #000 91%, transparent);
     -webkit-mask-composite: source-in; pointer-events: none; mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(transparent, #000 9%, #000 91%, transparent); mask-composite: intersect; }
-  .dark { color: #2f4a35; }
+  .dark { color: #2f4a35; transition: color .5s; } .dark.lite { color: #f0e5ce; }
 
   /* 타이틀 등장: 줄마다 아래에서 밀려 올라오고, 안내 문구는 뒤이어 페이드 */
   #title .ln { display: block; overflow: hidden; padding: 0 .12em .25em 0; margin-bottom: -.25em; }
@@ -123,6 +123,7 @@
   #rallyText a { pointer-events: auto; color: #f1e6cf; text-decoration: none; cursor: inherit;
     font: 500 clamp(28px, 6.2vw, 110px)/1.02 -apple-system, "Helvetica Neue", "Pretendard", sans-serif; letter-spacing: -0.03em; }
   #rallyText a:hover { color: #dcff2e; }
+  #rally.cur, #rally.cur * { cursor: none !important; }   /* Contact에선 커서를 캔버스에 직접 그림 */
   #rallyCanvas { position: absolute; inset: 0; z-index: 4; pointer-events: none; width: 100%; height: 100%; display: block; }
 
   /* ── 메뉴(목차) 페이지: 날짜 + 큰 제목 줄 목록 (피그마 145:501) ── */
@@ -138,7 +139,7 @@
   #menuYear { position: absolute; right: 3.7vw; top: 75.2vh; font-size: min(10.42vw, 18.5vh); line-height: normal; }
 
   /* Contact 상단 줄·하단 소개 문단 */
-  #rallyTop, #rallyBottom { position: absolute; left: clamp(20px, 3.5vw, 56px); right: clamp(20px, 3.5vw, 56px); z-index: 5; color: #f1e6cf; pointer-events: none;
+  #rallyTop, #rallyBottom { position: absolute; left: clamp(20px, 3.5vw, 56px); right: clamp(20px, 3.5vw, 56px); z-index: 3; color: #f1e6cf; pointer-events: none;
     font: 600 clamp(10px, .85vw, 13px)/1.5 -apple-system, "Pretendard", sans-serif; letter-spacing: .06em; text-transform: uppercase; }
   #rallyTop { top: clamp(20px, 4vh, 40px); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
   #rallyTop nav { justify-self: end; display: flex; gap: 1.6em; }
@@ -329,7 +330,8 @@ const TEXTS = [
   ['Sixteen strangers. One yellow ball.<br>Nobody blinks.', 'para dark', .5, .9, 'front', .40, .58, 'center'],
 ];
 // 순서: follow the ball → 텍스트 장면(.26~.34) → 테니스 영상 → 메뉴 → (sticky 풀리며 Contact로) (각 구간 = 화면에 꽉 차 있는 구간)
-const SLIDE = .06;                             // 다음 장면이 아래에서 밀고 올라오는 길이
+const SLIDE = .06;
+const C0 = .86;                                // 테니스 영상 카드 시작 크기 (1 = 원래 크기)                             // 다음 장면이 아래에서 밀고 올라오는 길이
 const V_IN = .40, V_OUT = .58;                 // 테니스 경기 영상 장면 구간 (스크롤 약 1.5화면 동안 영상 3초)
 const M_IN = .64, M_OUT = .72;                 // 메뉴(목차) 장면 구간
 const END = .74;                               // 스크롤 끝 진행도 (메뉴가 마지막 장면 → sticky 풀리며 Contact로)
@@ -375,7 +377,7 @@ document.fonts && document.fonts.ready.then(measure);
 function keyframes() {
   // 영상 첫 프레임 속 공 위치(원본 1278x720 기준 715.5, 370.5 / 지름 11px) → 화면 좌표. 3D 공이 여기 내려앉으면 영상 공으로 바뀜
   const cvh = CVW * 720 / 1278;
-  const lx = (VW / 2 + (715.5 / 1278 - .5) * CVW) / VW, ly = (VH / 2 + (370.5 / 720 - .5) * cvh) / VH, ld = 11 / 1278 * CVW / VM;
+  const lx = (VW / 2 + (715.5 / 1278 - .5) * CVW * C0) / VW, ly = (VH / 2 + (370.5 / 720 - .5) * cvh * C0) / VH, ld = 11 / 1278 * CVW * C0 / VM;   // 영상이 작은 카드 상태(C0)일 때 공 자리
   // 'the ball.'의 두 단어 사이 위쪽 (글자 윗부분에 살짝 겹치는 자리)
   // 피그마: 'follow'(360px) 기준 공 중심 = 글자 왼쪽 + 2.76em, 위 + 0.71em, 지름 1.04em → 'w' 끝에 걸침
   const f = follow, gx = (f.px + f.fs * 2.76) / VW, gy = (f.py + f.fs * .71) / VH, gd = f.fs * 1.04 / VM;
@@ -529,6 +531,12 @@ function frame() {
   // ── 장면 전환: 디졸브 없이 다음 장면이 아래에서 밀고 올라옴 ──
   const place = (el, off) => { el.style.opacity = Math.abs(off) < 1 ? 1 : 0; el.style.transform = `translateY(${off * VH}px)`; };
   place(court, slide(p, V_IN, V_OUT));
+  // 영상은 작은 둥근 카드로 마스킹된 채 올라왔다가, 재생되면서 화면 가득 커짐
+  const cq = clamp((p - (V_IN + .02)) / .1), ce = 1 - (cq < .5 ? 4 * cq ** 3 : 1 - Math.pow(-2 * cq + 2, 3) / 2);
+  const cs = 1 - (1 - C0) * ce, cw = CVW * cs, ch = CVW * 720 / 1278 * cs;
+  courtVideo.style.transform = court0.style.transform = cs < 1 ? `scale(${cs})` : '';
+  texts[texts.length - 1].el.classList.toggle('lite', ce > .5);
+  court.style.clipPath = ce > 0 ? `inset(${(VH - ch) / 2 * ce}px ${(VW - cw) / 2 * ce}px round ${ce * 22}px)` : 'none';
   const mo = slide(p, M_IN, M_OUT);
   place(menu, mo);
   menu.classList.toggle('live', Math.abs(mo) < .05);
@@ -605,7 +613,16 @@ function draw() {
     c.fillStyle = '#dcff2e';
     c.beginPath(); c.arc(b.x, b.y, b.r, 0, Math.PI * 2); c.fill();
   }
+  // 커서: 공과 겹친 부분은 뚫려 보이게 (오버레이 느낌)
+  if (mouse.on) {
+    c.globalCompositeOperation = 'xor'; c.fillStyle = '#dcff2e';
+    c.beginPath(); c.arc(mouse.x, mouse.y, 7.8, 0, Math.PI * 2); c.fill();
+    c.globalCompositeOperation = 'source-over';
+  }
 }
+const mouse = { x: 0, y: 0, on: false };
+sec.addEventListener('pointermove', e => { const r = sec.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; mouse.on = e.pointerType === 'mouse'; sec.classList.toggle('cur', mouse.on); });
+sec.addEventListener('pointerleave', () => { mouse.on = false; sec.classList.remove('cur'); });
 
 function loop(t) {
   if (!visible) { last = 0; return; }
