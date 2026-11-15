@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crowd Gaze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,900;1,700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #333d28; overflow-x: clip; cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18'><circle cx='9' cy='9' r='7.8' fill='%23dcff2e'/></svg>") 9 9, auto; }
+  #hero { position: relative; height: 100vh; overflow: hidden; background: #313b26; touch-action: pan-y; cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18'><circle cx='9' cy='9' r='7.8' fill='%23dcff2e'/></svg>") 9 9, pointer; }
+  #stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #title { position: absolute; top: max(4vh, 24px); left: max(4vw, 24px); margin: 0; z-index: 2; pointer-events: none;
+    color: #2f4a35; font: italic 700 clamp(30px, min(5.2vw, 6.8vh), 80px)/0.95 "Didot", "Bodoni 72", Georgia, serif; letter-spacing: -0.02em; }
+  #title small { display: block; margin-top: 0.6em; font: 600 clamp(10px, .8vw, 12px)/1 -apple-system, "Pretendard", sans-serif;
+    letter-spacing: .25em; text-transform: uppercase; font-style: normal; opacity: .75; }
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; color: #2f4a35;
+    font: 600 14px/1 -apple-system, "Pretendard", sans-serif; letter-spacing: .2em; }
+
+
+  /* ── 스크롤 스토리 ── */
+  #story { position: relative; height: 766vh; background: #333d28; }
+  #sticky { position: sticky; top: 0; height: 100vh; }
+  .layer { position: absolute; inset: 0; pointer-events: none; }
+  #back { z-index: 1; } #front { z-index: 5; }
+  #ball { position: absolute; left: 0; top: 0; z-index: 4; pointer-events: none; will-change: transform;
+ }
+  /* 화면 전체 은은한 노이즈 (피그마 배경 질감) */
+  body::after { content: ""; position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: .22; mix-blend-mode: overlay;
+    background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  /* 공 그림자: 공 아래쪽에 흐린 그림자 → 떠 있는 느낌 */
+  #ballShadow { position: absolute; left: 16%; top: 42%; width: 92%; height: 86%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.7), rgba(0,0,0,.35) 60%, transparent); filter: blur(8px); }
+  #ballImg { position: relative; width: 100%; height: 100%; background: url(img/ball.webp) center / contain no-repeat; }
+  #ballImg.gl { background: none; }
+  #ballGL { position: absolute; left: -6%; top: -6%; width: 112%; height: 112%; display: block; }
+  .t { position: absolute; left: 0; top: 0; white-space: nowrap; will-change: transform, opacity; color: #f1e6cf; }
+  .serif { font: italic 700 clamp(30px, 5.5vw, 96px)/0.9 "Didot", "Bodoni 72", Georgia, serif; letter-spacing: -0.02em; }
+  .mega { font: italic 700 clamp(96px, max(23vw, 15vh), 460px)/0.8 "Didot", "Bodoni 72", Georgia, serif; letter-spacing: -0.035em; }
+  .huge { font: italic 700 clamp(54px, 14vw, 250px)/0.82 "Didot", "Bodoni 72", Georgia, serif; letter-spacing: -0.03em; }
+  .sans { font: 700 clamp(10px, 1.05vw, 15px)/1 -apple-system, "Pretendard", sans-serif; letter-spacing: .3em; text-transform: uppercase; color: #d4e43c; }
+  .para { font: italic 400 clamp(14px, 1.4vw, 20px)/1.35 "Didot", "Bodoni 72", Georgia, serif; white-space: normal; width: min(80vw, 30em); text-align: center; }
+  .big { font: italic 700 clamp(40px, 8vw, 150px)/0.9 "Didot", "Bodoni 72", Georgia, serif; letter-spacing: -0.03em; }
+  .lft { text-align: left; }
+  /* 피그마 레이아웃 (1920x1080 기준 → vw/vh 중 작은 쪽으로 비례) */
+  .follow { font: italic 700 min(18.75vw, 33.3vh)/normal "Alegreya", Georgia, serif; color: #f0e5ce; }
+  .copy { font: 900 min(6.67vw, 11.85vh)/normal "Alegreya", Georgia, serif; color: #f0e5ce; }
+  .meta { font: 400 max(11px, min(1.46vw, 2.6vh))/1.3 "Pretendard", -apple-system, sans-serif; color: #89957c; white-space: normal; width: min(19vw, 33.8vh); }
+  .meta.nw { white-space: nowrap; width: auto; } .meta.rt { text-align: right; }
+  .bold { font: 700 max(18px, min(3.33vw, 5.93vh))/1.25 Helvetica, Arial, sans-serif; color: #f0e5ce; text-align: center; }
+  .small { font: 400 max(11px, min(1.46vw, 2.6vh))/1.43 Helvetica, Arial, sans-serif; color: #f0e5ce; text-align: center; }
+  .emblem img { display: block; height: min(8.02vw, 14.26vh); width: auto; aspect-ratio: 306 / 240; }
+  .pink { color: #e58f84; }
+  /* 글자 등장: 아래에서 떠오르며 흐림 → 선명 (장면마다 순서대로) */
+  /* 글자 등장: 종류마다 다르게 (--d = 장면 안 순서 지연) */
+  .t .rv { display: inline-block; opacity: 0; transform: translateY(.45em); filter: blur(8px);
+    transition: opacity .8s ease var(--d, 0s), transform 1.1s cubic-bezier(.2,.85,.25,1) var(--d, 0s), filter .8s ease var(--d, 0s); }
+  .t.in .rv { opacity: 1; transform: none; filter: none; }
+  /* 타이틀(follow · the ball · ©): 마스크 아래에서 한 글자씩 올라옴 */
+  .t.follow, .t.copy { clip-path: inset(-40% -20% 0 -20%); }
+  .t.follow .rv, .t.copy .rv { opacity: 1; transform: none; filter: none; transition: none; }
+  .t .ch { display: inline-block; white-space: pre; transform: translateY(110%) rotate(8deg); transform-origin: left top;
+    transition: transform 1.1s cubic-bezier(.2,.85,.25,1) calc(var(--d, 0s) + var(--i) * .05s); }
+  .t.in .ch { transform: none; }
+  /* 볼드 문단: 줄마다 마스크 아래에서 올라옴 */
+  .t.bold .rv { opacity: 1; transform: none; filter: none; transition: none; }
+  .t .ln { display: block; overflow: hidden; padding-bottom: .06em; }
+  .t .ln > span { display: inline-block; transform: translateY(110%); transition: transform .9s cubic-bezier(.2,.85,.25,1) calc(var(--d, 0s) + var(--i) * .08s); }
+  .t.in .ln > span { transform: none; }
+  /* 엠블럼: 돌면서 통통 튀어 커짐 */
+  .t.emblem .rv { transform: scale(.3) rotate(-30deg); filter: none; transition: opacity .5s ease var(--d, 0s), transform 1.2s cubic-bezier(.34,1.56,.64,1) var(--d, 0s); }
+  /* 작은 회색 글: 옆에서 살짝 밀려 들어옴 */
+  .t.meta .rv { transform: translateX(-1.2em); filter: none; transition: opacity 1s ease var(--d, 0s), transform 1.2s cubic-bezier(.2,.85,.25,1) var(--d, 0s); }
+  .t.meta.rt .rv { transform: translateX(1.2em); }
+  .t.meta.nw .rv { transform: translateY(-1em); }
+  /* 영상 위 문장: 왼쪽에서 오른쪽으로 닦아내듯 */
+  .t.para .rv { opacity: 1; transform: none; filter: none; clip-path: inset(0 100% 0 0); transition: clip-path 1.3s cubic-bezier(.65,0,.35,1) var(--d, 0s); }
+  .t.para.in .rv { clip-path: inset(0 0 0 0); }
+  #menuRows .no, #menuRows .name { transform: translateY(105%); transition: transform .9s cubic-bezier(.2,.85,.25,1); }
+  #menuRows li:nth-child(2) span { transition-delay: .07s; } #menuRows li:nth-child(3) span { transition-delay: .14s; } #menuRows li:nth-child(4) span { transition-delay: .21s; }
+  #menuDesc, #menuYear { transform: translateY(30px); transition: transform 1s .25s cubic-bezier(.2,.85,.25,1), opacity .8s .25s; }
+  #menuYear { opacity: 0; }
+  #menu.shown #menuRows .no, #menu.shown #menuRows .name, #menu.shown #menuDesc, #menu.shown #menuYear { transform: none; }
+  #menu.shown #menuYear { opacity: 1; }
+  #rallyText > *, #rallyTop > *, #rallyBottom > * { opacity: 0; transform: translateY(24px); transition: opacity .8s, transform 1s cubic-bezier(.2,.85,.25,1); }
+  #rallyText > :nth-child(2) { transition-delay: .12s; } #rallyText > :nth-child(3) { transition-delay: .3s; }
+  #rallyTop > *, #rallyBottom > * { transition-delay: .4s; }
+  #rallyText a { opacity: 1 !important; transform: none !important; }
+  #rallyText .ml { display: block; overflow: hidden; padding-bottom: .04em; }
+  #rallyText .ml > span { display: inline-block; transform: translateY(110%); transition: transform 1s cubic-bezier(.2,.85,.25,1) .1s; }
+  #rallyText .ml + .ml > span { transition-delay: .2s; }
+  #rally.in #rallyText .ml > span { transform: none; }
+  #rally.in #rallyText > *, #rally.in #rallyTop > *, #rally.in #rallyBottom > * { opacity: 1; transform: none; }
+  .ch { display: inline-block; will-change: transform; }
+  #court { z-index: 3; background: #e48080; opacity: 0; display: grid; place-items: center; }
+  #court > * { grid-area: 1 / 1; }
+  #court img { width: 100%; height: auto; display: block; }
+  #court video, #court img { display: block; will-change: transform;
+    /* 영상 가장자리를 배경색으로 부드럽게 (브라우저마다 영상 색이 살짝 달라 박스 경계가 보이는 것 방지) */
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(transparent, #000 9%, #000 91%, transparent);
+    -webkit-mask-composite: source-in; pointer-events: none; mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(transparent, #000 9%, #000 91%, transparent); mask-composite: intersect; }
+  .dark { color: #2f4a35; }
+
+  /* 타이틀 등장: 줄마다 아래에서 밀려 올라오고, 안내 문구는 뒤이어 페이드 */
+  #title .ln { display: block; overflow: hidden; padding: 0 .12em .25em 0; margin-bottom: -.25em; }
+  #title .ln > span { display: inline-block; transform: translateY(115%) rotate(5deg); transform-origin: left bottom; }
+  #title small { opacity: 0; transform: translateY(8px); letter-spacing: .6em; }
+  #title.intro .ln > span { animation: titleRise 1.2s cubic-bezier(.2,.85,.25,1) forwards; }
+  #title.intro .ln:nth-child(2) > span { animation-delay: .15s; }
+  #title.intro small { transition: opacity .9s .9s, transform .9s .9s, letter-spacing 1.2s .9s cubic-bezier(.2,.85,.25,1);
+    opacity: .75; transform: none; letter-spacing: .25em; }
+  @keyframes titleRise { to { transform: none; } }
+
+  /* 히어로 ↔ 스토리 연결 이미지: 영상 끝지점 바로 아래에 붙임 */
+  #bridge { height: 6vh; background: url(img/bridge.webp?v=2) center top / cover no-repeat; }
+
+  /* ── 마지막: 테니스공 여러 개가 떨어지고 클릭하면 튕겨 나감 ── */
+  #rally { position: relative; height: 100vh; background: #333d28; overflow: hidden; }
+  #rallyText { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; text-align: center; pointer-events: none; color: #f1e6cf; }
+  #rallyText .label, #rallyText small { display: block; font: 700 clamp(10px, 1.05vw, 15px)/1 -apple-system, "Pretendard", sans-serif;
+    letter-spacing: .3em; text-transform: uppercase; color: #d4e43c; }
+  #rallyText .label { margin-bottom: 1.6em; }
+  #rallyText small { margin-top: 2.4em; opacity: .7; }
+  #rallyText a { pointer-events: auto; color: #f1e6cf; text-decoration: none; cursor: inherit;
+    font: 500 clamp(28px, 6.2vw, 110px)/1.02 -apple-system, "Helvetica Neue", "Pretendard", sans-serif; letter-spacing: -0.03em; }
+  #rallyText a:hover { color: #dcff2e; }
+  #rallyCanvas { position: absolute; inset: 0; z-index: 4; pointer-events: none; width: 100%; height: 100%; display: block; }
+
+  /* ── 메뉴(목차) 페이지: 날짜 + 큰 제목 줄 목록 (피그마 145:501) ── */
+  #menu { position: absolute; inset: 0; z-index: 8; background: #333d28; color: #f0e5ce; opacity: 0; pointer-events: none; font-family: Helvetica, Arial, sans-serif; font-weight: 700; }
+  #menu.live { pointer-events: auto; }
+  #menuRows { position: absolute; left: 3.49vw; right: 3.7vw; top: 6.76vh; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1.85vh; }
+  #menuRows button { all: unset; box-sizing: border-box; width: 100%; height: min(6.25vw, 11.1vh); display: flex; justify-content: space-between; align-items: flex-start;
+    overflow: hidden; border-bottom: 1px solid #f0e5ce; cursor: inherit; transition: color .25s; }
+  #menuRows .no { font-size: max(11px, min(1.61vw, 2.87vh)); line-height: normal; }
+  #menuRows .name { font-size: min(7.47vw, 13.3vh); line-height: normal; white-space: nowrap; letter-spacing: -0.01em; }
+  #menuRows li.on button { color: #dcff2e; }
+  #menuDesc { position: absolute; left: 3.49vw; top: 81.7vh; width: min(17.7vw, 31.5vh); margin: 0; font-size: max(11px, min(1.67vw, 2.96vh)); line-height: 1.19; opacity: .3; }
+  #menuYear { position: absolute; right: 3.7vw; top: 75.2vh; font-size: min(10.42vw, 18.5vh); line-height: normal; }
+
+  /* Contact 상단 줄·하단 소개 문단 */
+  #rallyTop, #rallyBottom { position: absolute; left: clamp(20px, 3.5vw, 56px); right: clamp(20px, 3.5vw, 56px); z-index: 5; color: #f1e6cf; pointer-events: none;
+    font: 600 clamp(10px, .85vw, 13px)/1.5 -apple-system, "Pretendard", sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  #rallyTop { top: clamp(20px, 4vh, 40px); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+  #rallyTop nav { justify-self: end; display: flex; gap: 1.6em; }
+  #rallyTop a, #rallyBottom a { color: inherit; pointer-events: auto; text-underline-offset: 3px; }
+  #rallyTop a:hover, #rallyBottom a:hover { color: #dcff2e; }
+  #rallyBottom { bottom: clamp(20px, 5vh, 48px); display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 5vw, 80px); }
+  #rallyBottom p { margin: 0; max-width: 36em; }
+  #rallyBottom p:first-child { font-size: clamp(13px, 1.25vw, 19px); line-height: 1.35; }
+  @media (max-width: 760px) { #rallyTop { grid-template-columns: 1fr auto; } #rallyTop .mid { display: none; } #rallyBottom { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<section id="hero">
+<canvas id="stage"></canvas>
+<h1 id="title"><span class="ln"><span>The Crowd</span></span><span class="ln"><span>Is Watching</span></span><small>Move your cursor</small></h1>
+</section>
+<div id="bridge"></div>
+
+
+
+<section id="story">
+  <div id="sticky">
+    <div class="layer" id="back"></div>
+    <div class="layer" id="court"><video id="courtVideo" src="img/court.mp4" muted playsinline preload="auto"></video><img id="court0" src="img/court0.jpg" alt=""></div>
+    <div id="ball"><div id="ballShadow"></div><div id="ballImg"><canvas id="ballGL"></canvas></div></div>
+    <div class="layer" id="front"></div>
+    <div id="menu">
+  <ol id="menuRows">
+    <li><button data-i="0"><span class="no">01/04</span><span class="name">The Crowd</span></button></li>
+    <li><button data-i="1"><span class="no">02/04</span><span class="name">Follow the Ball</span></button></li>
+    <li><button data-i="2"><span class="no">03/04</span><span class="name">The Match</span></button></li>
+    <li><button data-i="3"><span class="no">04/04</span><span class="name">Contact</span></button></li>
+  </ol>
+  <p id="menuDesc"></p>
+  <div id="menuYear">‘25-‘26</div>
+</div>
+  </div>
+</section>
+<section id="rally">
+  <div id="rallyTop">
+    <span>Crowd Gaze</span>
+    <span class="mid">An interactive tennis story</span>
+    <nav><a href="#">Instagram</a><a href="#">Behance</a><a href="mailto:hello@example.com">Contact</a></nav>
+  </div>
+  <div id="rallyBottom">
+    <p>A small study of where eyes go — sixteen spectators, one yellow ball, and a pink court that never ends.</p>
+    <p>Open to collaborations, commissions and friendly rallies. Feel free to <a href="mailto:hello@example.com">say hello</a>.</p>
+  </div>
+  <div id="rallyText">
+    <span class="label">Contact</span>
+    <a href="mailto:hello@example.com"><span class="ml"><span>hello@</span></span><span class="ml"><span>example.com</span></span></a>
+    <small>Click anywhere to hit the balls</small>
+  </div>
+  <canvas id="rallyCanvas"></canvas>
+</section>
+<div id="loading">LOADING 0%</div>
+<script>
+const COUNT = 25;               // frames/f00 (왼쪽) ~ f24 (오른쪽)
+const stage = document.getElementById('stage'), ctx = stage.getContext('2d');
+const hero = document.getElementById('hero');
+const loading = document.getElementById('loading');
+const frames = [];
+let target = 0.5, cur = 0.5;
+
+// 위쪽 분홍 벽 이미지 (영상 위를 채움)
+const wall = new Image();
+wall.src = 'wall.webp';
+const wallLayer = document.createElement('canvas'), wctx = wallLayer.getContext('2d');
+
+const TOTAL = COUNT + 1;
+let loaded = 0;
+function onLoad() {
+  loaded++;
+  loading.textContent = `LOADING ${Math.round(loaded / TOTAL * 100)}%`;
+  if (loaded === TOTAL) { loading.remove(); document.getElementById('title').classList.add('intro'); resize(); requestAnimationFrame(tick); }
+}
+wall.onload = onLoad;
+for (let i = 0; i < COUNT; i++) {
+  const img = new Image();
+  img.onload = onLoad;
+  img.src = `frames/f${String(i).padStart(2, '0')}.jpg`;
+  frames.push(img);
+}
+
+let R, SEAM;                        // 영상 위치, 연결부 높이
+function resize() {
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  // 첫 화면 배치는 화면 크기 기준, 화면 아래로 넘치는 영상 하단은 자르지 않고 스크롤로 이어서 보여줌
+  R = rect(frames[0], innerWidth * dpr, innerHeight * dpr);
+  const total = Math.max(innerHeight * dpr, Math.floor(R[1] + R[3]));
+  stage.width = innerWidth * dpr; stage.height = total;
+  hero.style.height = total / dpr + 'px';
+  SEAM = R[3] * 0.045;
+  buildWall();
+}
+addEventListener('resize', resize);
+
+// 영상: 항상 가로를 꽉 채우고 하단 정렬. 위쪽엔 타이틀 공간을 남기고, 넘치는 아래 초록 벽은 첫 화면 밖으로 이어짐
+function rect(img, W, H) {
+  const top = H * 0.16;             // 영상을 위로 올림 (위 분홍 벽 일부 잘림)
+  const maxCut = 0.42;              // 아래 초록 벽은 영상 높이의 42%까지 잘려도 됨
+  const s = W / img.width, w = W, h = img.height * s;
+  let y = Math.max(H - h, top);
+  if (H - y < h * (1 - maxCut)) y = H - h * (1 - maxCut);
+  return [0, y, w, h];
+}
+
+// 분홍 벽 레이어: 영상 윗부분까지 살짝 덮고, 아래로 갈수록 투명하게 (한 번만 만들어 둠)
+function buildWall() {
+  const W = stage.width, bottom = Math.ceil(R[1] + SEAM);
+  if (bottom <= 0) { wallLayer.width = wallLayer.height = 0; return; }
+  wallLayer.width = W; wallLayer.height = bottom;
+  const s = Math.max(W / wall.width, bottom / wall.height);
+  const ww = wall.width * s, wh = wall.height * s;
+  wctx.filter = 'blur(6px)';         // 연결부가 자연스럽도록 벽 이미지를 살짝 흐리게
+  wctx.drawImage(wall, (W - ww) / 2 - 12, bottom - wh - 12, ww + 24, wh + 24);
+  wctx.filter = 'none';
+  const g = wctx.createLinearGradient(0, R[1], 0, bottom);
+  g.addColorStop(0, 'rgba(0,0,0,1)');
+  g.addColorStop(0.5, 'rgba(0,0,0,0.6)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  wctx.globalCompositeOperation = 'destination-in';
+  wctx.fillStyle = g; wctx.fillRect(0, 0, W, bottom);
+  wctx.globalCompositeOperation = 'source-over';
+}
+
+function paint(img, alpha) {
+  const [x, y, w, h] = R;
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(img, x, y, w, h);
+}
+
+function draw(pos) {
+  const W = stage.width, H = stage.height;
+  const f = pos * (COUNT - 1), i = Math.floor(f), t = f - i;
+  const a = frames[i], b = frames[Math.min(i + 1, COUNT - 1)];
+  ctx.clearRect(0, 0, W, H);
+  paint(a, 1);
+  if (t > 0.001) paint(b, t);
+  ctx.globalAlpha = 1;
+  if (wallLayer.height) ctx.drawImage(wallLayer, 0, 0);
+}
+
+// 마우스를 따라 시선 이동 (마우스가 멈추면 관중도 멈춤)
+// 마우스를 한 번도 안 움직였을 때: 랠리를 보듯 왼쪽·오른쪽을 번갈아 봄 (머무는 시간은 조금씩 다르게)
+let moved = false, autoSide = 1, autoNext = 0;
+function tick(now) {
+  if (!moved && now > autoNext) {
+    autoSide = -autoSide;
+    target = 0.5 + autoSide * (0.36 + Math.random() * 0.1);
+    autoNext = now + 900 + Math.random() * 700;      // 0.9~1.6초 머문 뒤 반대쪽으로
+  }
+  cur += (target - cur) * (moved ? 0.12 : 0.16);
+  if (scrollY < hero.offsetHeight) draw(cur);
+  requestAnimationFrame(tick);
+}
+
+function point(x) { moved = true; target = Math.min(1, Math.max(0, x / innerWidth)); }
+addEventListener('pointermove', e => point(e.clientX));
+addEventListener('pointerdown', e => point(e.clientX));
+document.addEventListener('mouseleave', () => { if (moved) target = 0.5; });
+
+</script>
+
+<script>
+// ════════ 스크롤 스토리: 테니스공이 화면 밖에서 들어와 'the ball.' 위에 살짝 겹쳐 떠 있다가 → 테니스 경기 영상 → 하늘 보는 관중 위를 맴돎 → 'Love'의 O ════════
+(() => {
+const story = document.getElementById('story'), sticky = document.getElementById('sticky');
+const back = document.getElementById('back'), front = document.getElementById('front');
+const ball = document.getElementById('ball'), ballImg = document.getElementById('ballImg');
+
+// 텍스트 목록: [내용, 스타일, x(0~1), y(0~1), 앞/뒤, 보이는 구간 시작, 끝, 정렬]
+// 앞(front)=공보다 앞, 뒤(back)=공보다 뒤. 공이 작을 땐(멀 때) 앞 텍스트 뒤로 지나가고, 커지면(가까우면) 모든 텍스트 앞으로 나옴
+const TEXTS = [
+  // follow the ball 장면 (피그마 143:77)
+  ['follow', 'follow', .051, .129, 'front', -1, .20, 'left'],
+  ['the ball', 'follow', .413, .432, 'back', -1, .20, 'left'],
+  ['©', 'copy', .907, .356, 'back', -1, .20, 'left'],
+  ['Crowd Gaze', 'meta nw', .072, .055, 'back', -1, .20, 'center'],
+  ['An interactive tennis story', 'meta nw', .499, .055, 'back', -1, .20, 'center'],
+  ['2026', 'meta nw', .926, .055, 'back', -1, .20, 'center'],
+  ['Sixteen spectators, one yellow ball, and a pink court that never ends.', 'meta', .0245, .604, 'back', -1, .20, 'left'],
+  ['Every head in the stand follows one thing.', 'meta rt', .954, .827, 'back', -1, .20, 'right'],
+  // 영상 전 텍스트 장면 (피그마 145:572)
+  ['<img src="img/emblem.png" alt="">', 'emblem', .5, .246, 'back', .26, .34, 'center'],
+  ['Two players. One net.<br>Sixteen heads turning left,<br>right, left again —<br>and nobody dares to blink.', 'bold', .5, .499, 'back', .26, .34, 'center'],
+  ['A ball crosses the net twice a second.<br>Every rally is a question the crowd answers with their necks.<br>Scroll — the match begins.', 'small', .5, .742, 'back', .26, .34, 'center'],
+  ['Sixteen strangers. One yellow ball.<br>Nobody blinks.', 'para dark', .5, .9, 'front', .40, .58, 'center'],
+];
+// 순서: follow the ball → 텍스트 장면(.26~.34) → 테니스 영상 → 메뉴 → (sticky 풀리며 Contact로) (각 구간 = 화면에 꽉 차 있는 구간)
+const SLIDE = .06;                             // 다음 장면이 아래에서 밀고 올라오는 길이
+const V_IN = .40, V_OUT = .58;                 // 테니스 경기 영상 장면 구간 (스크롤 약 1.5화면 동안 영상 3초)
+const M_IN = .64, M_OUT = .72;                 // 메뉴(목차) 장면 구간
+const END = .74;                               // 스크롤 끝 진행도 (메뉴가 마지막 장면 → sticky 풀리며 Contact로)
+
+const mk = (html, cls, parent) => {
+  const e = document.createElement('div'); e.className = 't ' + cls;
+  if (/\b(follow|copy)\b/.test(cls)) html = [...html].map((c, i) => `<span class="ch" style="--i:${i}">${c}</span>`).join('');          // 타이틀: 글자 단위
+  else if (/\bbold\b/.test(cls)) html = html.split('<br>').map((l, i) => `<span class="ln"><span style="--i:${i}">${l}</span></span>`).join('');  // 볼드: 줄 단위
+  e.innerHTML = `<span class="rv">${html}</span>`; parent.appendChild(e); return e; };
+// 글자 공간감: 각 글자가 스크롤을 조금씩 늦게(시간차) 따라오며 깊이에 따라 다른 속도로 위로 흘러감
+const texts = TEXTS.map((t, i) => ({ el: mk(t[0], t[1], t[4] === 'front' ? front : back), x: t[2], y: t[3], a: t[5], b: t[6], align: t[7],
+  depth: t[4] === 'front' ? 1 : .55, k: [.07, .045, .1][i % 3], sp: null }));
+// 'the ball.' 글자들: 공이 지나가면 공을 피해 좌우로 벌어짐
+// 같은 장면 텍스트끼리 순서대로 등장 (0.09초 간격)
+{ const seen = {}; texts.forEach(t => { const k = t.a; seen[k] = (seen[k] || 0); t.el.style.setProperty('--d', seen[k] * (k < 0 ? .06 : .12) + 's'); seen[k]++; }); }
+const follow = texts[0];                         // 공이 'follow' 끝에 걸쳐 떠 있음
+const court = document.getElementById('court'), courtVideo = document.getElementById('courtVideo'), menu = document.getElementById('menu');
+// Safari 등에서 스크롤로 프레임 이동이 화면에 반영되도록 한 번 재생했다 멈춤 (음소거라 허용됨)
+courtVideo.addEventListener('loadeddata', () => { const pr = courtVideo.play(); pr && pr.then(() => courtVideo.pause()).catch(() => {}); }, { once: true });
+const court0 = document.getElementById('court0');   // 공 지운 첫 프레임 (3D 공 도착 전까지 영상 위에 덮음)
+let CVW = 1;                                   // 화면에 표시되는 영상 너비
+
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+// 구간 [a,b] 안에서 들어올 때/나갈 때 0→1→0
+function vis(p, a, b, f = .035) { return Math.min(clamp((p - a) / f), clamp((b - p) / f)); }
+// 장면 위치: 구간 전엔 아래(+1=화면 한 칸 아래), 구간 중엔 0, 구간 후엔 위(-1). 스크롤하듯 이어짐
+function slide(p, a, b) { return p < a ? clamp((a - p) / SLIDE) : p > b ? -clamp((p - b) / SLIDE) : 0; }
+
+let VW, VH, VM;
+function measure() {
+  VW = innerWidth; VH = innerHeight; VM = Math.min(VW, VH);
+  for (const t of texts) { t.w = t.el.offsetWidth; t.h = t.el.offsetHeight; }
+  follow.fs = parseFloat(getComputedStyle(follow.el).fontSize);
+  // 테니스 영상: 코트가 화면에 다 보이게 (영상 배경 분홍 = 레이어 배경)
+  const vw = Math.min(VW * .8, VH * .8 * 1278 / 720, 1278);   // 원본보다 커지지 않게 (화질)
+  courtVideo.style.width = court0.style.width = vw + 'px'; CVW = vw;
+}
+addEventListener('resize', measure);
+document.fonts && document.fonts.ready.then(measure);
+
+// 공 경로 키프레임: [진행도, x, y, 지름(화면 짧은 변 대비)]
+function keyframes() {
+  // 영상 첫 프레임 속 공 위치(원본 1278x720 기준 715.5, 370.5 / 지름 11px) → 화면 좌표. 3D 공이 여기 내려앉으면 영상 공으로 바뀜
+  const cvh = CVW * 720 / 1278;
+  const lx = (VW / 2 + (715.5 / 1278 - .5) * CVW) / VW, ly = (VH / 2 + (370.5 / 720 - .5) * cvh) / VH, ld = 11 / 1278 * CVW / VM;
+  // 'the ball.'의 두 단어 사이 위쪽 (글자 윗부분에 살짝 겹치는 자리)
+  // 피그마: 'follow'(360px) 기준 공 중심 = 글자 왼쪽 + 2.76em, 위 + 0.71em, 지름 1.04em → 'w' 끝에 걸침
+  const f = follow, gx = (f.px + f.fs * 2.76) / VW, gy = (f.py + f.fs * .71) / VH, gd = f.fs * 1.04 / VM;
+  // 오른쪽 밖 → 왼쪽으로 들어와 멈춤 → 아래로 쭉 내려감 (방향 전환 최소화)
+  return [
+    [-.12, 1.25, .18, .10],   // 스토리가 화면에 올라오기 시작할 때 화면 밖 오른쪽
+    [-.05, .88, .24, gd * .6],
+    [ .00, gx, gy, gd],       // 'follow' 끝 글자를 스치며 지나감 (멈추지 않음)
+    [ .09, gx - .14, gy + .07, gd * .92],
+    [ .18, .26, .33, .17],    // 왼쪽으로 크게 흘러감
+    [ .29, .58, .38, .13],    // 오른쪽으로 돌아오며 굵은 문단 위를 지나감
+    [V_IN - .04, lx + .04, ly - .06, .075], // 올라오는 테니스 영상 쪽으로 내려가
+    [V_IN, lx, ly, ld],       // 영상 속 공 자리에 내려앉음
+    [1.10, lx, ly, ld],
+  ];
+}
+function catmull(p0, p1, p2, p3, t) {
+  const t2 = t * t, t3 = t2 * t;
+  return .5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+}
+function path(p, K) {
+  if (p >= K[K.length - 2][0]) return K[K.length - 1].slice(1);   // 마지막 착지 지점에서는 정확히 고정
+  let i = 0; while (i < K.length - 2 && p > K[i + 1][0]) i++;
+  const t = clamp((p - K[i][0]) / (K[i + 1][0] - K[i][0]));
+  const g = j => K[clamp(j, 0, K.length - 1)];
+  return [1, 2, 3].map(c => catmull(g(i - 1)[c], g(i)[c], g(i + 1)[c], g(i + 2)[c], t));
+}
+
+// ── 3D 테니스공: WebGL로 직접 그림 (구 + 펠트 질감 + 흰 솔기 곡선 + 빛). 실패하면 기존 공 이미지 사용 ──
+const ballGL = (() => {
+  const cv = document.getElementById('ballGL');
+  const gl = cv.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: true });
+  if (!gl) return null;
+  const vs = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0., 1.); }';
+  const fs = `precision highp float;
+  uniform vec2 uRes; uniform mat3 uRot;
+  float hash(vec3 p){ p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+  float noise(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f);
+    return mix(mix(mix(hash(i), hash(i + vec3(1,0,0)), f.x), mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+               mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x), mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z); }
+  float fbm(vec3 p){ float a = .5, s = 0.; for (int i = 0; i < 5; i++) { s += a * noise(p); p *= 2.03; a *= .5; } return s; }
+  // 테니스공 솔기: 구 위의 곡선 (a=.75, b=.25 → 반지름 1)
+  vec3 seam(float t){ return vec3(.75 * cos(t) + .25 * cos(3. * t), .75 * sin(t) - .25 * sin(3. * t), .8660254 * sin(2. * t)); }
+  float seamDist(vec3 q){
+    float bt = 0., bd = 9.;
+    for (int i = 0; i < 64; i++) { float t = float(i) / 64. * 6.2831853; float d = distance(q, seam(t)); if (d < bd) { bd = d; bt = t; } }
+    float lo = bt - .1, hi = bt + .1;   // 가장 가까운 곳 주변을 좁혀 정확히
+    for (int i = 0; i < 12; i++) { float m1 = mix(lo, hi, .382), m2 = mix(lo, hi, .618);
+      if (distance(q, seam(m1)) < distance(q, seam(m2))) hi = m2; else lo = m1; }
+    return distance(q, seam((lo + hi) * .5));
+  }
+  void main(){
+    vec2 uv = (gl_FragCoord.xy / uRes) * 2. - 1.;
+    float R = 1. / 1.12, rr = length(uv) / R;
+    // 보송한 가장자리: 실루엣을 잔털 노이즈로 흐리게
+    float fuzz = noise(vec3(uv * 70., 3.)) - .5;
+    float alpha = 1. - smoothstep(.985, 1.045, rr + fuzz * .05);
+    if (alpha <= 0.) { gl_FragColor = vec4(0.); return; }
+    float rc = min(rr, .999);
+    vec3 n = vec3(uv / R * (rc / max(rr, 1e-4)), 0.); n.z = sqrt(max(0., 1. - dot(n.xy, n.xy)));
+    vec3 q = uRot * n;
+    // 펠트: 큰 얼룩 + 아주 잔 털
+    float big = fbm(q * 5.), fine = fbm(q * 60.), hair = noise(q * 180.);
+    vec3 felt = mix(vec3(.66, .78, .10), vec3(.86, .95, .30), big);
+    felt *= .82 + .28 * fine + .12 * (hair - .5);
+    // 솔기: 흰 고무 줄 + 양옆 살짝 패인 그림자
+    float d = seamDist(q);
+    float line = 1. - smoothstep(.032, .043, d);
+    float groove = mix(.7, 1., smoothstep(.04, .085, d));
+    vec3 col = mix(felt * groove, vec3(.95, .94, .86) * (.92 + .08 * fine), line);
+    // 빛: 왼쪽 위에서 부드럽게, 가장자리는 털 때문에 살짝 밝게 번짐
+    vec3 L = normalize(vec3(-.55, .65, .75));
+    float diff = max(dot(n, L), 0.);
+    float wrap = max((dot(n, L) + .35) / 1.35, 0.);
+    col *= .28 + .55 * wrap + .35 * diff;
+    col += vec3(.06, .07, .02) * pow(1. - n.z, 3.) * (.5 + fine);
+    col += .05 * pow(max(dot(reflect(-L, n), vec3(0., 0., 1.)), 0.), 10.) * (1. - line * .5);
+    gl_FragColor = vec4(col * alpha, alpha);
+  }`;
+  const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(o)); return null; } return o; };
+  const v = sh(gl.VERTEX_SHADER, vs), f = sh(gl.FRAGMENT_SHADER, fs);
+  if (!v || !f) return null;
+  const pr = gl.createProgram(); gl.attachShader(pr, v); gl.attachShader(pr, f); gl.linkProgram(pr);
+  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) return null;
+  gl.useProgram(pr);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const uRes = gl.getUniformLocation(pr, 'uRes'), uRot = gl.getUniformLocation(pr, 'uRot');
+  document.getElementById('ballImg').classList.add('gl');
+  let lastKey = '';
+  // size: 공 지름(px), ax/ay: 회전 각도
+  return (size, ax, ay) => {
+    const px = Math.min(720, Math.round(size * 1.12 * Math.min(devicePixelRatio || 1, 2)));
+    const key = px + ':' + ax.toFixed(3) + ':' + ay.toFixed(3);
+    if (key === lastKey || px < 4) return; lastKey = key;
+    if (cv.width !== px) { cv.width = cv.height = px; }
+    gl.viewport(0, 0, px, px);
+    const cx = Math.cos(ax), sx = Math.sin(ax), cy = Math.cos(ay), sy = Math.sin(ay);
+    // Ry * Rx (열 우선)
+    gl.uniformMatrix3fv(uRot, false, new Float32Array([cy, 0, -sy,  sx * sy, cx, sx * cy,  cx * sy, -sx, cx * cy]));
+    gl.uniform2f(uRes, px, px);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  };
+})();
+
+let sp = null;                      // 부드럽게 따라가는 스크롤 진행도
+function frame() {
+  requestAnimationFrame(frame);
+  const top = story.offsetTop, len = story.offsetHeight - VH;
+  const raw = (scrollY - top) / len * END;
+  if (raw < -1.2 || raw > 1.2) return;
+  const rawC = Math.min(raw, END);                     // 끝 이후엔 장면 고정 (sticky 풀리며 메뉴가 그대로 위로 올라감)
+  sp = sp === null ? rawC : sp + (rawC - sp) * .1;
+  const p = sp;
+
+  // ── 텍스트 장면 (자기 장면과 함께 아래에서 올라와 위로 밀려 나감) ──
+  for (const t of texts) {
+    const off = slide(p, t.a < 0 ? -9 : t.a, t.b);
+    const x = t.align === 'left' ? t.x * VW : t.align === 'right' ? t.x * VW - t.w : t.x * VW - t.w / 2;
+    t.sp = t.sp === null ? rawC : t.sp + (rawC - t.sp) * t.k;
+    const mid = t.a < 0 ? 0 : (t.a + Math.min(t.b, 1)) / 2;
+    const par = -(t.sp - mid) * VH * .45 * t.depth;
+    const y = t.y * VH - (t.align === 'center' ? t.h / 2 : 0) + par;
+    t.px = x; t.py = y + off * VH;
+    t.el.style.opacity = Math.abs(off) < 1 ? 1 : 0;
+    // 장면이 절반 이상 들어오면 등장, 완전히 빠지면 초기화 (다시 오면 또 등장)
+    const shown = t.a < 0 ? top - scrollY + t.py + t.h * .3 < VH * .97 && off > -.6 : Math.abs(off) < .55;   // 첫 장면: 글자가 화면 아래에 닿자마자 등장
+    if (shown) t.el.classList.add('in'); else if (Math.abs(off) >= 1 || (t.a < 0 && top - scrollY + t.py > VH * 1.1)) t.el.classList.remove('in');
+    t.el.style.transform = `translate(${x}px, ${t.py}px)`;
+  }
+
+  // ── 공 위치 ──
+  const K = keyframes();
+  let [bx, by, bd] = path(p, K);
+  const D = bd * VM, X = bx * VW, Y = by * VH;
+  // 스토리가 화면에 다 올라오기 전엔 공 위치를 화면 기준으로 (그래야 화면 밖에서 들어옴)
+  const lift = Math.max(0, sticky.getBoundingClientRect().top);
+  ball.style.width = ball.style.height = D + 'px';
+  ball.style.transform = `translate(${X - D / 2}px, ${Y - D / 2 - lift}px)`;
+  const handoff = clamp((V_IN - p) / .006);          // 1: 3D 공 / 0: 영상 속 공
+  ball.style.opacity = handoff;                      // 영상 속 공 자리에 닿으면 사라지고 이후 다시 안 나옴
+  court0.style.opacity = handoff;
+  ball.style.zIndex = 9;                              // 내려오는 동안 올라오는 영상보다 위
+  // 회전은 천천히: 3D 공은 구 자체를 돌리고, 실패 시 이미지만 살짝 회전
+  if (ballGL) { if (handoff > 0) ballGL(D, .5 + p * 1.1, -.6 + p * 2.6); }
+  else ballImg.style.transform = `rotate(${p * 160}deg)`;
+
+
+
+  // ── 장면 전환: 디졸브 없이 다음 장면이 아래에서 밀고 올라옴 ──
+  const place = (el, off) => { el.style.opacity = Math.abs(off) < 1 ? 1 : 0; el.style.transform = `translateY(${off * VH}px)`; };
+  place(court, slide(p, V_IN, V_OUT));
+  const mo = slide(p, M_IN, M_OUT);
+  place(menu, mo);
+  menu.classList.toggle('live', Math.abs(mo) < .05);
+  menu.classList.toggle('shown', Math.abs(mo) < .6);
+  // 스크롤에 맞춰 영상 진행 (재생 대신 스크롤 위치로 프레임 이동)
+  if (courtVideo.duration) {
+    const tt = clamp((p - V_IN) / (V_OUT - V_IN)) * (courtVideo.duration - .05);
+    if (Math.abs(courtVideo.currentTime - tt) > 1 / 30) courtVideo.currentTime = tt;
+  }
+
+}
+
+const start = () => { measure(); requestAnimationFrame(frame); };
+document.readyState === 'complete' ? start() : addEventListener('load', start);
+})();
+</script>
+
+<script>
+// ════════ 테니스공 비: 화면에 들어오면 공이 우르르 떨어져 쌓이고, 클릭하면 주변 공이 튕겨 나감 ════════
+(() => {
+const sec = document.getElementById('rally'), cv = document.getElementById('rallyCanvas'), c = cv.getContext('2d');
+const N = 28;                                  // 공 개수
+let W, H, F, dpr, balls = [], started = false, visible = false, last = 0;   // F: 공이 쌓이는 바닥 (하단 문단 위)
+
+function size() {
+  dpr = Math.min(devicePixelRatio || 1, 2);
+  W = sec.clientWidth; H = sec.clientHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const bb = document.getElementById('rallyBottom');
+  F = bb ? bb.offsetTop - 18 : H;
+}
+addEventListener('resize', size); size();
+
+function spawn() {
+  const m = Math.min(W, H);
+  balls = Array.from({ length: N }, (_, i) => {
+    const r = m * .05;                         // 모두 같은 크기
+    return { r, x: r + Math.random() * (W - 2 * r), y: -r - Math.random() * H * 1.2 - i * 25,
+             vx: (Math.random() - .5) * 200, vy: 0, a: Math.random() * 6.28 };
+  });
+}
+
+function step(dt) {
+  const g = 2600;
+  for (const b of balls) {
+    b.vy += g * dt; b.x += b.vx * dt; b.y += b.vy * dt;
+    if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * .45; }
+    if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx) * .45; }
+    if (b.y > F - b.r) { b.y = F - b.r; b.vy = -Math.abs(b.vy) * .28; b.vx *= .96; if (Math.abs(b.vy) < 30) b.vy = 0; }
+    b.a += b.vx * dt / b.r;
+  }
+  // 공끼리 부딪힘
+  for (let i = 0; i < balls.length; i++) for (let j = i + 1; j < balls.length; j++) {
+    const A = balls[i], B = balls[j];
+    const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy), min = A.r + B.r;
+    if (d > 0 && d < min) {
+      const nx = dx / d, ny = dy / d, push = (min - d) / 2;
+      A.x -= nx * push; A.y -= ny * push; B.x += nx * push; B.y += ny * push;
+      const rel = (B.vx - A.vx) * nx + (B.vy - A.vy) * ny;
+      if (rel < 0) {
+        const imp = -rel * .45 / 2;
+        A.vx -= imp * nx; A.vy -= imp * ny; B.vx += imp * nx; B.vy += imp * ny;
+        A.a -= imp * .002; B.a += imp * .002;
+      }
+    }
+  }
+}
+
+function draw() {
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c.clearRect(0, 0, W, H);
+  for (const b of balls) {
+    // 네온색 원
+    c.fillStyle = '#dcff2e';
+    c.beginPath(); c.arc(b.x, b.y, b.r, 0, Math.PI * 2); c.fill();
+  }
+}
+
+function loop(t) {
+  if (!visible) { last = 0; return; }
+  requestAnimationFrame(loop);
+  const dt = Math.min(.033, last ? (t - last) / 1000 : .016); last = t;
+  step(dt / 2); step(dt / 2);
+  draw();
+}
+
+new IntersectionObserver(([e]) => {
+  visible = e.isIntersecting;
+  sec.classList.toggle('in', e.isIntersecting && e.intersectionRatio > .3);   // 글자 등장 애니메이션
+  if (visible && !started && e.intersectionRatio > .3) { started = true; size(); spawn(); }
+  if (visible) requestAnimationFrame(loop);
+}, { threshold: [0, .3] }).observe(sec);
+
+// 클릭: 가까운 공일수록 세게 튕겨 나감
+sec.addEventListener('pointerdown', e => {   // 캔버스는 글자 앞에 있지만 클릭은 통과 (이메일 링크 클릭 가능)
+  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, R = Math.min(W, H) * .4;
+  for (const b of balls) {
+    const dx = b.x - x, dy = b.y - y, d = Math.hypot(dx, dy) || 1;
+    if (d < R) {
+      const f = (1 - d / R) * 1500 + (d < b.r ? 500 : 0);
+      b.vx += dx / d * f; b.vy += dy / d * f - f * .6;
+    }
+  }
+});
+})();
+</script>
+
+<script>
+// ════════ 메뉴(목차): 항목에 마우스를 올리면 오른쪽 미리보기가 바뀌고, 누르면 그 장면으로 이동 ════════
+(() => {
+// [미리보기 이미지, 설명, 볼거리 목록, 이동할 곳(섹션 id, 스토리 진행도)]
+const CH = [
+  ['frames/f12.jpg', 'Sixteen spectators in pink and green. Move your cursor and every head turns with it.', ['Mouse-tracking crowd', 'Rally-style idle glances'], ['hero', 0]],
+  ['img/ball.webp', 'A single yellow ball drifts in from off-screen and settles on the words that matter.', ['3D floating ball', 'Words that make room'], ['story', .08]],
+  ['img/court.jpg', 'A top-down match on a pink court. Scroll to play every shot, scroll back to rewind.', ['Scroll-scrubbed video', 'Bird’s-eye court'], ['story', .49]],
+  ['img/court.jpg', 'Say hello, then hit the neon balls around the screen.', ['Email', 'Clickable ball rain'], ['rally', 0]],
+];
+const items = [...document.querySelectorAll('#menuRows li')];
+const desc = document.getElementById('menuDesc');
+function show(i) {
+  items.forEach((li, j) => li.classList.toggle('on', i === j));
+  desc.textContent = CH[i][1];
+}
+function go(i) {
+  const [id, p] = CH[i][3], el = document.getElementById(id);
+  const y = id === 'story' ? el.offsetTop + p / .74 * (el.offsetHeight - innerHeight) : el.offsetTop;
+  scrollTo({ top: y, behavior: 'smooth' });
+}
+items.forEach((li, i) => {
+  const b = li.querySelector('button');
+  b.addEventListener('mouseenter', () => show(i));
+  b.addEventListener('focus', () => show(i));
+  b.addEventListener('click', () => go(i));
+});
+show(2);
+})();
+</script>
+</body>
+</html>
