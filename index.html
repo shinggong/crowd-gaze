@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Crowd Gaze — Courtwear &amp; Tennis Culture</title>
+<title>Crowd Gaze Tennis Club — Now Recruiting</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,900;1,700&display=swap" rel="stylesheet">
 <style>
@@ -161,7 +161,7 @@
   #rallyTop a:hover, #rallyBottom a:hover { color: #dcff2e; }
   #rallyBottom { bottom: clamp(20px, 5vh, 48px); display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 5vw, 80px); }
   #rallyBottom p { margin: 0; max-width: 36em; }
-  #rally.cvtext #rallyBottom .rw { color: transparent; }   /* 실제 글씨는 캔버스에 그림 */
+  #rally.cvtext #rallyBottom .rw { color: transparent; white-space: nowrap; }   /* 실제 글씨는 캔버스에 그림 */
   #rally.cvtext #rallyBottom a { text-decoration-color: transparent; }
   #rallyBottom p:first-child { font-size: clamp(13px, 1.25vw, 19px); line-height: 1.35; }
   @media (max-width: 760px) { #rallyTop { grid-template-columns: 1fr auto; } #rallyTop .mid { display: none; } #rallyBottom { grid-template-columns: 1fr; } }
@@ -170,7 +170,7 @@
 <body>
 <section id="hero">
 <canvas id="stage"></canvas>
-<h1 id="title"><span class="ln"><span>All Eyes</span></span><span class="ln"><span>On Court</span></span><small>Move your cursor</small></h1>
+<h1 id="title"><span class="ln"><span>Join The</span></span><span class="ln"><span>Crowd</span></span><small>Move your cursor</small></h1>
 </section>
 <div id="bridge"></div>
 
@@ -184,29 +184,29 @@
     <div class="layer" id="front"></div>
     <div id="menu">
   <ol id="menuRows">
-    <li><button data-i="0"><span class="no">01/04</span><span class="name">The Stands</span></button></li>
+    <li><button data-i="0"><span class="no">01/04</span><span class="name">Meet the Club</span></button></li>
     <li><button data-i="1"><span class="no">02/04</span><span class="name">Follow the Ball</span></button></li>
-    <li><button data-i="2"><span class="no">03/04</span><span class="name">Center Court</span></button></li>
-    <li><button data-i="3"><span class="no">04/04</span><span class="name">Contact</span></button></li>
+    <li><button data-i="2"><span class="no">03/04</span><span class="name">Our Sessions</span></button></li>
+    <li><button data-i="3"><span class="no">04/04</span><span class="name">Join Us</span></button></li>
   </ol>
   <p id="menuDesc"></p>
-  <div id="menuYear">SS ’26</div>
+  <div id="menuYear">Est. ’26</div>
 </div>
   </div>
 </section>
 <section id="rally">
   <div id="rallyTop">
-    <span>Crowd Gaze</span>
-    <span class="mid">Courtwear &amp; Tennis Culture</span>
-    <nav><a href="#">Instagram</a><a href="https://www.behance.net/doh222" target="_blank" rel="noopener">Behance</a><a href="mailto:s_ggong@naver.com">Contact</a></nav>
+    <span>Crowd Gaze Tennis Club</span>
+    <span class="mid">Now recruiting — Season ’26</span>
+    <nav><a href="#">Instagram</a><a href="https://www.behance.net/doh222" target="_blank" rel="noopener">Behance</a><a href="mailto:join@crowdgaze.club">Join</a></nav>
   </div>
   <div id="rallyBottom">
-    <p>A tennis label for the players and the people who watch them — made for long rallies and full stands.</p>
-    <p>Open to collaborations, stockists and friendly rallies. Feel free to <a href="mailto:s_ggong@naver.com">say hello</a>.</p>
+    <p>A weekend tennis club for beginners, returners and rally lovers. Sixteen members and counting.</p>
+    <p>Saturdays 9AM, Court 3. Rackets on loan, balls on us. <a href="mailto:join@crowdgaze.club">Apply to join</a>.</p>
   </div>
   <div id="rallyText">
-    <span class="label">Say Hello</span>
-    <a href="mailto:s_ggong@naver.com"><span class="ml"><span>s_ggong@</span></span><span class="ml"><span>naver.com</span></span></a>
+    <span class="label">Join the Club</span>
+    <a href="mailto:join@crowdgaze.club"><span class="ml"><span>join@</span></span><span class="ml"><span>crowdgaze.club</span></span></a>
     <small>Click anywhere to return serve</small>
   </div>
   <canvas id="rallyCanvas"></canvas>
@@ -339,16 +339,16 @@ const TEXTS = [
   ['follow', 'follow', .051, .129, 'front', -1, .20, 'left'],
   ['the ball', 'follow', .413, .432, 'back', -1, .20, 'left'],
   ['©', 'copy', .907, .356, 'back', -1, .20, 'left'],
-  ['Crowd Gaze', 'meta nw', .072, .055, 'back', -1, .20, 'center'],
-  ['Courtwear & Tennis Culture', 'meta nw', .499, .055, 'back', -1, .20, 'center'],
+  ['Crowd Gaze Tennis Club', 'meta nw', .0245, .042, 'back', -1, .20, 'left'],
+  ['Now recruiting — Season ’26', 'meta nw', .499, .055, 'back', -1, .20, 'center'],
   ['Est. 2026', 'meta nw', .926, .055, 'back', -1, .20, 'center'],
-  ['Made for the long rally — on court, in the stands and everywhere in between.', 'meta', .0245, .604, 'back', -1, .20, 'left'],
-  ['Sixteen heads. One ball. Zero distractions.', 'meta rt', .954, .827, 'back', -1, .20, 'right'],
+  ['A weekend tennis club for beginners, returners and anyone who loves a long rally.', 'meta', .0245, .604, 'back', -1, .20, 'left'],
+  ['Sixteen members. Always room for one more.', 'meta rt', .954, .827, 'back', -1, .20, 'right'],
   // 영상 전 텍스트 장면 (피그마 145:572)
   ['<img src="img/emblem.png" alt="">', 'emblem', .5, .246, 'back', .26, .34, 'center'],
-  ['Every point starts quiet.<br>Then the ball takes off,<br>and the whole stand<br>turns right along with it.', 'bold', .5, .499, 'back', .26, .34, 'center'],
-  ['Crowd Gaze makes courtwear for players and the people who watch them.<br>Built for long rallies, hot afternoons and the hush before a serve.<br>Scroll — the match begins.', 'small', .5, .742, 'back', .26, .34, 'center'],
-  ['Quiet, please. First serve.<br>Scroll to play every shot.', 'para dark', .5, .945, 'front', .40, .58, 'center'],
+  ['Every Saturday morning,<br>two courts, one net,<br>and a crowd that cheers<br>for every single point.', 'bold', .5, .499, 'back', .26, .34, 'center'],
+  ['All levels welcome — we pair you up, lend you a racket and keep the balls coming.<br>Weekend sessions, monthly mixers and a friendly ladder for the competitive ones.<br>Scroll — see how we play.', 'small', .5, .742, 'back', .26, .34, 'center'],
+  ['Saturdays, 9AM. Court 3.<br>Scroll to watch a session.', 'para dark', .5, .945, 'front', .40, .58, 'center'],
 ];
 // 순서: follow the ball → 텍스트 장면(.26~.34) → 테니스 영상 → 메뉴 → (sticky 풀리며 Contact로) (각 구간 = 화면에 꽉 차 있는 구간)
 const SLIDE = .06;
@@ -755,10 +755,10 @@ sec.addEventListener('pointerdown', e => {   // 캔버스는 글자 앞에 있�
 (() => {
 // [미리보기 이미지, 설명, 볼거리 목록, 이동할 곳(섹션 id, 스토리 진행도)]
 const CH = [
-  ['frames/f12.jpg', 'Sixteen regulars in pink and green. Move your cursor and every head turns with you.', ['Mouse-tracking crowd', 'Rally-style idle glances'], ['hero', 0]],
-  ['img/ball.webp', 'One yellow ball, served from off-screen. Follow it through the words and down to the court.', ['3D floating ball', 'Words that make room'], ['story', .08]],
-  ['img/court.jpg', 'A bird’s-eye match on our pink court. Scroll to play every shot, scroll back to replay.', ['Scroll-scrubbed video', 'Bird’s-eye court'], ['story', .49]],
-  ['img/court.jpg', 'Collabs, stockists or a friendly rally — drop us a line, then hit a few balls on the way out.', ['Email', 'Clickable ball rain'], ['rally', 0]],
+  ['frames/f12.jpg', 'Sixteen members in pink and green. Move your cursor and every head turns with you.', ['Mouse-tracking crowd', 'Rally-style idle glances'], ['hero', 0]],
+  ['img/ball.webp', 'Our yellow ball leads the way — follow it through the club notes and onto the court.', ['3D floating ball', 'Words that make room'], ['story', .08]],
+  ['img/court.jpg', 'A bird’s-eye look at a Saturday session. Scroll to play every shot, scroll back to replay.', ['Scroll-scrubbed video', 'Bird’s-eye court'], ['story', .49]],
+  ['img/court.jpg', 'Spots are open for Season ’26. Drop us a line, then hit a few balls on the way out.', ['Email', 'Clickable ball rain'], ['rally', 0]],
 ];
 const items = [...document.querySelectorAll('#menuRows li')];
 // 줄마다 장면 사진 (Follow: 진녹색 위 공, Contact: 네온 공 무늬)
