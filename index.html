@@ -140,12 +140,12 @@
   #menuRows button { all: unset; box-sizing: border-box; width: 100%; height: min(6.25vw, 11.1vh); display: flex; justify-content: space-between; align-items: flex-start;
     overflow: hidden; border-bottom: 1px solid #f0e5ce; cursor: inherit; transition: color .25s, height .7s cubic-bezier(.2,.85,.25,1); position: relative; }
   /* 호버한 줄: 높이가 커지며 장면 사진이 아래에서 열림 */
-  #menuRows li.on button { height: min(15vw, 26vh); }
+  #menuRows li.on button { height: min(17vw, 28vh); }
   #menuRows .no, #menuRows .name { position: relative; z-index: 1; }
-  /* 펼쳐진 줄 왼쪽에 사진: 줄 가운데 기준으로 위아래 같은 만큼 메뉴 위로 넘쳐 보임 */
+  /* 펼쳐진 줄 왼쪽에 사진: 줄 높이에 맞춰 위아래 여백이 같게 들어감 */
   #menuRows li { position: relative; }
-  #menuRows .mf { position: absolute; left: 13%; top: 50%; width: min(32vw, 52vh); aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; pointer-events: none; z-index: 5;
-    transform: translateY(-50%); clip-path: inset(50% 0 50% 0 round 8px); transition: clip-path .7s cubic-bezier(.2,.85,.25,1); }
+  #menuRows .mf { --pad: min(1.2vw, 2vh); position: absolute; left: 13%; top: var(--pad); height: calc(100% - var(--pad) * 2); aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; pointer-events: none; z-index: 5;
+    clip-path: inset(50% 0 50% 0 round 8px); transition: clip-path .7s cubic-bezier(.2,.85,.25,1); }
   #menuRows .mf i { position: absolute; inset: 0; transform: scale(1.15); transition: transform 1s cubic-bezier(.2,.85,.25,1); }
   #menuRows li.on .mf { clip-path: inset(0 0 0 0 round 8px); }
   #menuRows li.on .mf i { transform: none; }
