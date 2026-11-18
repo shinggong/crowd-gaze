@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Crowd Gaze</title>
+<title>Crowd Gaze — Courtwear &amp; Tennis Culture</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,900;1,700&display=swap" rel="stylesheet">
 <style>
@@ -167,7 +167,7 @@
 <body>
 <section id="hero">
 <canvas id="stage"></canvas>
-<h1 id="title"><span class="ln"><span>The Crowd</span></span><span class="ln"><span>Is Watching</span></span><small>Move your cursor</small></h1>
+<h1 id="title"><span class="ln"><span>All Eyes</span></span><span class="ln"><span>On Court</span></span><small>Move your cursor</small></h1>
 </section>
 <div id="bridge"></div>
 
@@ -181,34 +181,34 @@
     <div class="layer" id="front"></div>
     <div id="menu">
   <ol id="menuRows">
-    <li><button data-i="0"><span class="no">01/04</span><span class="name">The Crowd</span></button></li>
+    <li><button data-i="0"><span class="no">01/04</span><span class="name">The Stands</span></button></li>
     <li><button data-i="1"><span class="no">02/04</span><span class="name">Follow the Ball</span></button></li>
-    <li><button data-i="2"><span class="no">03/04</span><span class="name">The Match</span></button></li>
+    <li><button data-i="2"><span class="no">03/04</span><span class="name">Center Court</span></button></li>
     <li><button data-i="3"><span class="no">04/04</span><span class="name">Contact</span></button></li>
   </ol>
   <p id="menuDesc"></p>
-  <div id="menuYear">‘25-‘26</div>
+  <div id="menuYear">SS ’26</div>
 </div>
   </div>
 </section>
 <section id="rally">
   <div id="rallyTop">
     <span>Crowd Gaze</span>
-    <span class="mid">An interactive tennis story</span>
+    <span class="mid">Courtwear &amp; Tennis Culture</span>
     <nav><a href="#">Instagram</a><a href="#">Behance</a><a href="mailto:hello@example.com">Contact</a></nav>
   </div>
   <div id="rallyBottom">
-    <p>A small study of where eyes go — sixteen spectators, one yellow ball, and a pink court that never ends.</p>
-    <p>Open to collaborations, commissions and friendly rallies. Feel free to <a href="mailto:hello@example.com">say hello</a>.</p>
+    <p>A tennis label for the players and the people who watch them — made for long rallies and full stands.</p>
+    <p>Open to collaborations, stockists and friendly rallies. Feel free to <a href="mailto:hello@example.com">say hello</a>.</p>
   </div>
   <div id="rallyText">
-    <span class="label">Contact</span>
+    <span class="label">Say Hello</span>
     <a href="mailto:hello@example.com"><span class="ml"><span>hello@</span></span><span class="ml"><span>example.com</span></span></a>
-    <small>Click anywhere to hit the balls</small>
+    <small>Click anywhere to return serve</small>
   </div>
   <canvas id="rallyCanvas"></canvas>
 </section>
-<div id="loading">LOADING 0%</div>
+<div id="loading">WARMING UP 0%</div>
 <script>
 const COUNT = 36;               // frames/f00 (왼쪽) ~ f35 (오른쪽) — 고화질 영상 53~88번 프레임 전부 (장면 간 차이를 줄여 잔상 감소)
 const stage = document.getElementById('stage'), ctx = stage.getContext('2d');
@@ -226,7 +226,7 @@ const TOTAL = COUNT + 1;
 let loaded = 0;
 function onLoad() {
   loaded++;
-  loading.textContent = `LOADING ${Math.round(loaded / TOTAL * 100)}%`;
+  loading.textContent = `WARMING UP ${Math.round(loaded / TOTAL * 100)}%`;
   if (loaded === TOTAL) { loading.remove(); document.getElementById('title').classList.add('intro'); resize(); requestAnimationFrame(tick); }
 }
 wall.onload = onLoad;
@@ -337,15 +337,15 @@ const TEXTS = [
   ['the ball', 'follow', .413, .432, 'back', -1, .20, 'left'],
   ['©', 'copy', .907, .356, 'back', -1, .20, 'left'],
   ['Crowd Gaze', 'meta nw', .072, .055, 'back', -1, .20, 'center'],
-  ['An interactive tennis story', 'meta nw', .499, .055, 'back', -1, .20, 'center'],
-  ['2026', 'meta nw', .926, .055, 'back', -1, .20, 'center'],
-  ['Sixteen spectators, one yellow ball, and a pink court that never ends.', 'meta', .0245, .604, 'back', -1, .20, 'left'],
-  ['Every head in the stand follows one thing.', 'meta rt', .954, .827, 'back', -1, .20, 'right'],
+  ['Courtwear & Tennis Culture', 'meta nw', .499, .055, 'back', -1, .20, 'center'],
+  ['Est. 2026', 'meta nw', .926, .055, 'back', -1, .20, 'center'],
+  ['Made for the long rally — on court, in the stands and everywhere in between.', 'meta', .0245, .604, 'back', -1, .20, 'left'],
+  ['Sixteen heads. One ball. Zero distractions.', 'meta rt', .954, .827, 'back', -1, .20, 'right'],
   // 영상 전 텍스트 장면 (피그마 145:572)
   ['<img src="img/emblem.png" alt="">', 'emblem', .5, .246, 'back', .26, .34, 'center'],
-  ['Two players. One net.<br>Sixteen heads turning left,<br>right, left again —<br>and nobody dares to blink.', 'bold', .5, .499, 'back', .26, .34, 'center'],
-  ['A ball crosses the net twice a second.<br>Every rally is a question the crowd answers with their necks.<br>Scroll — the match begins.', 'small', .5, .742, 'back', .26, .34, 'center'],
-  ['Sixteen strangers. One yellow ball.<br>Nobody blinks.', 'para dark', .5, .945, 'front', .40, .58, 'center'],
+  ['Every point starts quiet.<br>Then the ball takes off,<br>and the whole stand<br>turns right along with it.', 'bold', .5, .499, 'back', .26, .34, 'center'],
+  ['Crowd Gaze makes courtwear for players and the people who watch them.<br>Built for long rallies, hot afternoons and the hush before a serve.<br>Scroll — the match begins.', 'small', .5, .742, 'back', .26, .34, 'center'],
+  ['Quiet, please. First serve.<br>Scroll to play every shot.', 'para dark', .5, .945, 'front', .40, .58, 'center'],
 ];
 // 순서: follow the ball → 텍스트 장면(.26~.34) → 테니스 영상 → 메뉴 → (sticky 풀리며 Contact로) (각 구간 = 화면에 꽉 차 있는 구간)
 const SLIDE = .06;
@@ -752,10 +752,10 @@ sec.addEventListener('pointerdown', e => {   // 캔버스는 글자 앞에 있�
 (() => {
 // [미리보기 이미지, 설명, 볼거리 목록, 이동할 곳(섹션 id, 스토리 진행도)]
 const CH = [
-  ['frames/f12.jpg', 'Sixteen spectators in pink and green. Move your cursor and every head turns with it.', ['Mouse-tracking crowd', 'Rally-style idle glances'], ['hero', 0]],
-  ['img/ball.webp', 'A single yellow ball drifts in from off-screen and settles on the words that matter.', ['3D floating ball', 'Words that make room'], ['story', .08]],
-  ['img/court.jpg', 'A top-down match on a pink court. Scroll to play every shot, scroll back to rewind.', ['Scroll-scrubbed video', 'Bird’s-eye court'], ['story', .49]],
-  ['img/court.jpg', 'Say hello, then hit the neon balls around the screen.', ['Email', 'Clickable ball rain'], ['rally', 0]],
+  ['frames/f12.jpg', 'Sixteen regulars in pink and green. Move your cursor and every head turns with you.', ['Mouse-tracking crowd', 'Rally-style idle glances'], ['hero', 0]],
+  ['img/ball.webp', 'One yellow ball, served from off-screen. Follow it through the words and down to the court.', ['3D floating ball', 'Words that make room'], ['story', .08]],
+  ['img/court.jpg', 'A bird’s-eye match on our pink court. Scroll to play every shot, scroll back to replay.', ['Scroll-scrubbed video', 'Bird’s-eye court'], ['story', .49]],
+  ['img/court.jpg', 'Collabs, stockists or a friendly rally — drop us a line, then hit a few balls on the way out.', ['Email', 'Clickable ball rain'], ['rally', 0]],
 ];
 const items = [...document.querySelectorAll('#menuRows li')];
 // 줄마다 장면 사진 (Follow: 진녹색 위 공, Contact: 네온 공 무늬)
