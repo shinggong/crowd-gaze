@@ -90,7 +90,7 @@
   #rallyText > :nth-child(2) { transition-delay: .12s; } #rallyText > :nth-child(3) { transition-delay: .3s; }
   #rallyTop > *, #rallyBottom > * { transition-delay: .4s; }
   #rallyText a { opacity: 1 !important; transform: none !important; }
-  #rallyText .ml { display: block; overflow: hidden; padding-bottom: .04em; }
+  #rallyText .ml { display: block; overflow: hidden; padding-bottom: .2em; margin-bottom: -.16em; }   /* g 같은 아래 꼬리 글자 안 잘리게 */
   #rallyText .ml > span { display: inline-block; transform: translateY(110%); transition: transform 1s cubic-bezier(.2,.85,.25,1) .1s; }
   #rallyText .ml + .ml > span { transition-delay: .2s; }
   #rally.in #rallyText .ml > span { transform: none; }
@@ -198,15 +198,15 @@
   <div id="rallyTop">
     <span>Crowd Gaze</span>
     <span class="mid">Courtwear &amp; Tennis Culture</span>
-    <nav><a href="#">Instagram</a><a href="#">Behance</a><a href="mailto:hello@example.com">Contact</a></nav>
+    <nav><a href="#">Instagram</a><a href="https://www.behance.net/doh222" target="_blank" rel="noopener">Behance</a><a href="mailto:s_ggong@naver.com">Contact</a></nav>
   </div>
   <div id="rallyBottom">
     <p>A tennis label for the players and the people who watch them — made for long rallies and full stands.</p>
-    <p>Open to collaborations, stockists and friendly rallies. Feel free to <a href="mailto:hello@example.com">say hello</a>.</p>
+    <p>Open to collaborations, stockists and friendly rallies. Feel free to <a href="mailto:s_ggong@naver.com">say hello</a>.</p>
   </div>
   <div id="rallyText">
     <span class="label">Say Hello</span>
-    <a href="mailto:hello@example.com"><span class="ml"><span>hello@</span></span><span class="ml"><span>example.com</span></span></a>
+    <a href="mailto:s_ggong@naver.com"><span class="ml"><span>s_ggong@</span></span><span class="ml"><span>naver.com</span></span></a>
     <small>Click anywhere to return serve</small>
   </div>
   <canvas id="rallyCanvas"></canvas>
