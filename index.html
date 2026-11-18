@@ -144,7 +144,7 @@
   #menuRows .no, #menuRows .name { position: relative; z-index: 1; }
   /* 펼쳐진 줄 왼쪽에 사진: 줄 높이에 맞춰 위아래 여백이 같게 들어감 */
   #menuRows li { position: relative; }
-  #menuRows .mf { --pad: min(1.2vw, 2vh); position: absolute; left: 13%; top: var(--pad); height: calc(100% - var(--pad) * 2); aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; pointer-events: none; z-index: 5;
+  #menuRows .mf { --pad: min(1.2vw, 2vh); position: absolute; left: 13%; top: calc(var(--pad) - .5px); height: calc(100% - var(--pad) * 2 - 1.85vh);   /* 위 선은 윗줄 밑선(줄 간격 1.85vh 위)이라 그만큼 빼서 위아래 간격을 같게 */ aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; pointer-events: none; z-index: 5;
     clip-path: inset(50% 0 50% 0 round 8px); transition: clip-path .7s cubic-bezier(.2,.85,.25,1); }
   #menuRows .mf i { position: absolute; inset: 0; transform: scale(1.15); transition: transform 1s cubic-bezier(.2,.85,.25,1); }
   #menuRows li.on .mf { clip-path: inset(0 0 0 0 round 8px); }
