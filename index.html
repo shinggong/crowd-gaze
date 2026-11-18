@@ -144,7 +144,7 @@
   #menuRows .no, #menuRows .name { position: relative; z-index: 1; }
   /* 펼쳐진 줄 왼쪽에 사진: 줄 높이에 맞춰 위아래 여백이 같게 들어감 */
   #menuRows li { position: relative; }
-  #menuRows .mf { --pad: min(1.2vw, 2vh); position: absolute; left: 13%; top: calc(var(--pad) - .5px); height: calc(100% - var(--pad) * 2 - 1.85vh);   /* 위 선은 윗줄 밑선(줄 간격 1.85vh 위)이라 그만큼 빼서 위아래 간격을 같게 */ aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; pointer-events: none; z-index: 5;
+  #menuRows .mf { --pad: min(1.2vw, 2vh); position: absolute; left: calc(max(11px, min(1.61vw, 2.87vh)) * 3.6);   /* 숫자 바로 옆 */ top: calc(var(--pad) - .5px); height: calc(100% - var(--pad) * 2 - 1.85vh);   /* 위 선은 윗줄 밑선(줄 간격 1.85vh 위)이라 그만큼 빼서 위아래 간격을 같게 */ aspect-ratio: 1448 / 1086;   /* 원본 사진 비율 그대로 */ border-radius: 8px; overflow: hidden; pointer-events: none; z-index: 5;
     clip-path: inset(50% 0 50% 0 round 8px); transition: clip-path .7s cubic-bezier(.2,.85,.25,1); }
   #menuRows .mf i { position: absolute; inset: 0; transform: scale(1.15); transition: transform 1s cubic-bezier(.2,.85,.25,1); }
   #menuRows li.on .mf { clip-path: inset(0 0 0 0 round 8px); }
@@ -416,44 +416,30 @@ function keyframes() {
     [ .11, gx - .11, gy + .32, gd * .97],
     [ .16, gx - .08, gy + .50, gd * .93],
     [ .21, gx + .10, 1.15, gd * .9],  // 오른쪽으로 꺾이며 화면 아래로 빠짐
-    [BA, BX0 / VW, (bland(0) - BH) / VH, BZ / VM],   // 굵은 문단 위에서 튀기 시작 (공중)
-    [BB, BX1 / VW, (bland(LN.length - 1) - BH) / VH, BZ / VM],   // 마지막 줄을 튀고 공중으로    // 오른쪽으로 돌아오며 굵은 문단 위를 지나감
-    [V_IN - .04, lx + .04, ly - .06, .075], // 올라오는 테니스 영상 쪽으로 내려가
+    [ .245, paraX(-.25), 1.08, .10],                 // 화면 왼쪽 아래 밖
+    [ .275, paraX(.12), lineY(1), .11],              // 문단 왼쪽으로 날아 들어와
+    [ .305, paraX(.5), lineY(0) - .07, .13],         // 첫 줄 위로 크게 넘어가며
+    [ .335, paraX(.78), lineY(2), .1],              // 오른쪽 아래로 휙 빠져나감
+    [V_IN - .04, lx + .03, ly - .01, .07],  // 휘어지며 테니스 영상 속 공 자리로
     [V_IN, lx, ly, ld],       // 영상 속 공 자리에 내려앉음
     [1.10, lx, ly, ld],
   ];
 }
-// ── 굵은 문단 위 통통 튀기: 줄마다 한 번씩 착지, 착지한 줄의 단어들이 흩어짐 ──
-const BA = .262, BB = .338;                       // 튀는 구간 (텍스트 장면이 화면에 꽉 찬 동안)
+// ── 굵은 문단 위를 공이 한 번에 휙 지나감: 공이 스친 단어만 바람에 밀리듯 살짝 비켜났다 제자리로 ──
 const boldT = texts.find(t => t.el.classList.contains('bold'));
 const LN = [...boldT.el.querySelectorAll('.ln')];
-const WORDS = [...boldT.el.querySelectorAll('.w')].map(el => ({ el, line: LN.indexOf(el.closest('.ln')) }));
-let BX0 = 0, BX1 = 0, BH = 0, BD = 0, BZ = 0;
-function bland(i) { return boldT.py + LN[i].offsetTop + boldT.fs * .3 - BD / 2; }   // i번째 줄 글자 윗면에 공이 닿는 중심 y
-function bounceSetup() {
-  BD = boldT.fs * 1.5; BH = VH * .04; BZ = VM * .9;   // BZ: 화면 쪽으로 튀어나올 때 최대 지름
-  BX0 = boldT.px + boldT.w * .16; BX1 = boldT.px + boldT.w * .84;
-}
-function bounce(p) {                               // 튀는 구간 공 위치 (뾰족하게 착지하는 포물선)
-  const n = LN.length, u = clamp((p - BA) / (BB - BA)), ph = u * n + .5, j = Math.min(Math.floor(ph), n), s = ph - j;
-  const from = bland(clamp(j - 1, 0, n - 1)), to = bland(clamp(j, 0, n - 1));
-  const base = from + (to - from) * s;
-  const h = 4 * s * (1 - s);                       // 0: 글자에 착지 / 1: 가장 높이 (화면 쪽으로 가장 가까움)
-  return [BX0 + (BX1 - BX0) * u, base - BH * h, BD + (BZ - BD) * h * h];   // Z축: 위로 튈수록 화면 밖으로 나올 듯 커짐
-}
-const hitP = k => BA + (k + .5) / LN.length * (BB - BA);   // k번째 줄에 착지하는 진행도
-function scatter(p) {
-  const n = LN.length; let any = false;
+const WORDS = [...boldT.el.querySelectorAll('.w')].map(el => ({ el }));
+const lineY = i => ((boldT.by ?? boldT.py) + LN[i].offsetTop + LN[i].offsetHeight / 2) / VH;   // i번째 줄 가운데 y (0~1)
+const paraX = u => (boldT.px + boldT.w * u) / VW;                                  // 문단 가로 위치 (0~1)
+function push(X, Y, D) {                         // 공과 가까운 단어를 공 반대쪽으로 밀어냄 (공이 지나가면 돌아옴)
+  const fs = boldT.fs; let any = false;
   for (const w of WORDS) {
-    const ph = hitP(w.line), a0 = clamp((p - ph) / .014);
-    if (a0 <= 0) { w.el.style.transform = ''; continue; }
+    const cx = boldT.px + w.el.offsetLeft + w.el.offsetWidth / 2, cy = boldT.py + w.el.offsetTop + w.el.offsetHeight / 2;
+    const dx = cx - X, dy = cy - Y, dist = Math.hypot(dx, dy) || 1;
+    const f = Math.exp(-Math.pow(dist / (D * .5 + fs * 1.6), 2));
+    if (f < .01) { if (w.el.style.transform) w.el.style.transform = ''; continue; }
     any = true;
-    const a = 1 + 2.7 * Math.pow(a0 - 1, 3) + 1.7 * Math.pow(a0 - 1, 2);   // 살짝 튕기듯
-    const hx = BX0 + (BX1 - BX0) * ((w.line + .5) / n);                  // 착지한 x
-    const cx = boldT.px + w.el.offsetLeft + w.el.offsetWidth / 2;
-    const d = cx - hx, dir = Math.sign(d) || 1, fall = Math.exp(-Math.abs(d) / (boldT.fs * 4));
-    const fs = boldT.fs;
-    w.el.style.transform = `translate(${dir * a * (fs * .2 + fs * .9 * fall)}px, ${-a * fs * (.05 + .4 * fall)}px) rotate(${dir * a * (3 + 14 * fall)}deg)`;
+    w.el.style.transform = `translate(${dx / dist * f * fs * .55}px, ${dy / dist * f * fs * .55}px) rotate(${Math.sign(dx) * f * 6}deg)`;
   }
   boldT.el.classList.toggle('scat', any);
 }
@@ -565,7 +551,7 @@ function frame() {
     const mid = t.a < 0 ? 0 : (t.a + Math.min(t.b, 1)) / 2;
     const par = -(t.sp - mid) * VH * .45 * t.depth;
     const y = t.y * VH - (t.align === 'center' ? t.h / 2 : 0) + par;
-    t.px = x; t.py = y + off * VH;
+    t.px = x; t.py = y + off * VH; t.by = y;   // by: 장면 슬라이드 전 기본 위치
     t.el.style.opacity = Math.abs(off) < 1 ? 1 : 0;
     // 장면이 절반 이상 들어오면 등장, 완전히 빠지면 초기화 (다시 오면 또 등장)
     const shown = t.a < 0 ? top - scrollY + t.py + t.h * .3 < VH * .97 && off > -.6 : Math.abs(off) < .55;   // 첫 장면: 글자가 화면 아래에 닿자마자 등장
@@ -574,12 +560,10 @@ function frame() {
   }
 
   // ── 공 위치 ──
-  bounceSetup();
   const K = keyframes();
   let [bx, by, bd] = path(p, K);
-  if (p > BA && p < BB) { const [x, y, d] = bounce(p); bx = x / VW; by = y / VH; bd = d / VM; }
-  scatter(p);
   const D = bd * VM, X = bx * VW, Y = by * VH;
+  push(X, Y, D);
   // 스토리가 화면에 다 올라오기 전엔 공 위치를 화면 기준으로 (그래야 화면 밖에서 들어옴)
   const lift = Math.max(0, sticky.getBoundingClientRect().top);
   ball.style.width = ball.style.height = D + 'px';
@@ -766,10 +750,10 @@ const CH = [
 const items = [...document.querySelectorAll('#menuRows li')];
 // 줄마다 사진 (img/menu1~4.webp)
 const PIC = [
-  'url(img/menu1.webp) center 30% / cover no-repeat',   // Meet the Club: 선수
-  'url(img/menu2.webp) center / cover no-repeat',       // Follow the Ball: 가방·공
-  'url(img/menu3.webp) center / cover no-repeat',       // Our Sessions: 경기장
-  'url(img/menu4.webp) center 25% / cover no-repeat',   // Join Us: 네트 앞 선수
+  'url(img/menu1.webp) center / 100% 100% no-repeat',   // Meet the Club: 선수
+  'url(img/menu2.webp) center / 100% 100% no-repeat',       // Follow the Ball: 가방·공
+  'url(img/menu3.webp) center / 100% 100% no-repeat',       // Our Sessions: 경기장
+  'url(img/menu4.webp) center / 100% 100% no-repeat',   // Join Us: 네트 앞 선수
 ];
 items.forEach((li, i) => { const m = document.createElement('div'); m.className = 'mf'; m.innerHTML = `<i style="background:${PIC[i]}"></i>`; li.appendChild(m); });
 const desc = document.getElementById('menuDesc');
