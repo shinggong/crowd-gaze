@@ -142,12 +142,13 @@
   /* 호버한 줄: 높이가 커지며 장면 사진이 아래에서 열림 */
   #menuRows li.on button { height: min(15vw, 26vh); }
   #menuRows .no, #menuRows .name { position: relative; z-index: 1; }
-  /* 호버한 자리(마우스 위치)에 사진이 메뉴 위로 크게 뜸 */
-  #menuFloat { position: absolute; left: 0; top: 0; width: min(32vw, 52vh); aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; pointer-events: none; z-index: 5;
-    opacity: 0; transform: translate(-50%, -50%) scale(.55) rotate(-4deg); transition: opacity .35s ease, transform .6s cubic-bezier(.2,.85,.25,1), left .35s cubic-bezier(.2,.85,.25,1), top .35s cubic-bezier(.2,.85,.25,1); }
-  #menuFloat.on { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
-  #menuFloat i { position: absolute; inset: 0; opacity: 0; transform: scale(1.12); transition: opacity .35s ease, transform .9s cubic-bezier(.2,.85,.25,1); }
-  #menuFloat i.on { opacity: 1; transform: none; }
+  /* 펼쳐진 줄 왼쪽에 사진: 줄 가운데 기준으로 위아래 같은 만큼 메뉴 위로 넘쳐 보임 */
+  #menuRows li { position: relative; }
+  #menuRows .mf { position: absolute; left: 13%; top: 50%; width: min(32vw, 52vh); aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; pointer-events: none; z-index: 5;
+    transform: translateY(-50%); clip-path: inset(50% 0 50% 0 round 8px); transition: clip-path .7s cubic-bezier(.2,.85,.25,1); }
+  #menuRows .mf i { position: absolute; inset: 0; transform: scale(1.15); transition: transform 1s cubic-bezier(.2,.85,.25,1); }
+  #menuRows li.on .mf { clip-path: inset(0 0 0 0 round 8px); }
+  #menuRows li.on .mf i { transform: none; }
   #menuRows .no { font-size: max(11px, min(1.61vw, 2.87vh)); line-height: normal; }
   #menuRows .name { font-size: min(7.47vw, 13.3vh); line-height: normal; white-space: nowrap; letter-spacing: -0.01em; }
   #menuRows li.on button { color: #dcff2e; }
@@ -770,22 +771,10 @@ const PIC = [
   'url(img/menu3.webp) center / cover no-repeat',       // Our Sessions: 경기장
   'url(img/menu4.webp) center 25% / cover no-repeat',   // Join Us: 네트 앞 선수
 ];
-const menuEl = document.getElementById('menu'), float = document.createElement('div');
-float.id = 'menuFloat'; float.innerHTML = PIC.map(b => `<i style="background:${b}"></i>`).join(''); menuEl.appendChild(float);
-const layers = [...float.children];
-let floatOn = false;
-menuEl.addEventListener('pointermove', e => {   // 사진이 마우스를 살짝 늦게 따라옴
-  const r = menuEl.getBoundingClientRect();
-  if (!floatOn) float.style.transition = 'opacity .35s ease, transform .6s cubic-bezier(.2,.85,.25,1)';   // 처음 뜰 땐 그 자리에서 바로
-  float.style.left = e.clientX - r.left + 'px'; float.style.top = e.clientY - r.top + 'px';
-  if (!floatOn) { float.offsetWidth; float.style.transition = ''; }
-});
-document.getElementById('menuRows').addEventListener('mouseleave', () => { floatOn = false; float.classList.remove('on'); });
+items.forEach((li, i) => { const m = document.createElement('div'); m.className = 'mf'; m.innerHTML = `<i style="background:${PIC[i]}"></i>`; li.appendChild(m); });
 const desc = document.getElementById('menuDesc');
-function show(i, hover) {
+function show(i) {
   items.forEach((li, j) => li.classList.toggle('on', i === j));
-  layers.forEach((l, j) => l.classList.toggle('on', i === j));
-  if (hover) { floatOn = true; float.classList.add('on'); }
   desc.textContent = CH[i][1];
 }
 function go(i) {
@@ -795,7 +784,7 @@ function go(i) {
 }
 items.forEach((li, i) => {
   const b = li.querySelector('button');
-  b.addEventListener('mouseenter', () => show(i, true));
+  b.addEventListener('mouseenter', () => show(i));
   b.addEventListener('focus', () => show(i));
   b.addEventListener('click', () => go(i));
 });
