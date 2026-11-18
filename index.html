@@ -18,7 +18,7 @@
     color: #2f4a35; font: italic 700 clamp(30px, min(5.2vw, 6.8vh), 80px)/0.95 "Didot", "Bodoni 72", Georgia, serif; letter-spacing: -0.02em; }
   #title small { display: block; margin-top: 0.6em; font: 600 clamp(10px, .8vw, 12px)/1 -apple-system, "Pretendard", sans-serif;
     letter-spacing: .25em; text-transform: uppercase; font-style: normal; opacity: .75; }
-  #loading { position: fixed; inset: 0; display: grid; place-items: center; color: #2f4a35;
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; color: #f0e5ce;
     font: 600 14px/1 -apple-system, "Pretendard", sans-serif; letter-spacing: .2em; }
 
 
@@ -78,6 +78,7 @@
   .t.meta .rv { transform: translateX(-1.2em); filter: none; transition: opacity 1s ease var(--d, 0s), transform 1.2s cubic-bezier(.2,.85,.25,1) var(--d, 0s); }
   .t.meta.rt .rv { transform: translateX(1.2em); }
   .t.meta.nw .rv { transform: translateY(-1em); }
+  .t.in.emblem .rv, .t.in.meta .rv { transform: none; }   /* 등장 후엔 원래 자리·각도로 (엠블럼 기울어짐 수정) */
   /* 영상 위 문장: 왼쪽에서 오른쪽으로 닦아내듯 */
   .t.para .rv { opacity: 1; transform: none; filter: none; clip-path: inset(0 100% 0 0); transition: clip-path 1.3s cubic-bezier(.65,0,.35,1) var(--d, 0s); }
   .t.para.in .rv { clip-path: inset(0 0 0 0); }
@@ -144,7 +145,7 @@
   #menuRows .no, #menuRows .name { position: relative; z-index: 1; }
   /* 펼쳐진 줄 왼쪽에 사진: 줄 높이에 맞춰 위아래 여백이 같게 들어감 */
   #menuRows li { position: relative; }
-  #menuRows .mf { --pad: min(1.2vw, 2vh); position: absolute; left: calc(max(11px, min(1.61vw, 2.87vh)) * 3.6);   /* 숫자 바로 옆 */ top: calc(var(--pad) - .5px); height: calc(100% - var(--pad) * 2 - 1.85vh);   /* 위 선은 윗줄 밑선(줄 간격 1.85vh 위)이라 그만큼 빼서 위아래 간격을 같게 */ aspect-ratio: 1448 / 1086;   /* 원본 사진 비율 그대로 */ border-radius: 8px; overflow: hidden; pointer-events: none; z-index: 5;
+  #menuRows .mf { --pad: min(1.2vw, 2vh); position: absolute; left: calc(max(11px, min(1.61vw, 2.87vh)) * 3.6);   /* 숫자 바로 옆 */ top: calc(var(--pad) - .5px); height: calc(100% - var(--pad) * 2 - 1.85vh);   /* 위 선은 윗줄 밑선(줄 간격 1.85vh 위)이라 그만큼 빼서 위아래 간격을 같게 */ aspect-ratio: 16 / 9;   /* 16:9로 크롭 */ border-radius: 8px; overflow: hidden; pointer-events: none; z-index: 5;
     clip-path: inset(50% 0 50% 0 round 8px); transition: clip-path .7s cubic-bezier(.2,.85,.25,1); }
   #menuRows .mf i { position: absolute; inset: 0; transform: scale(1.15); transition: transform 1s cubic-bezier(.2,.85,.25,1); }
   #menuRows li.on .mf { clip-path: inset(0 0 0 0 round 8px); }
@@ -415,8 +416,8 @@ function keyframes() {
     [ .05, gx - .06, gy + .12, gd],   // 왼쪽 아래로 휘며 'the' 왼쪽을 따라 내려감
     [ .11, gx - .11, gy + .32, gd * .97],
     [ .16, gx - .08, gy + .50, gd * .93],
-    [ .21, gx + .10, 1.15, gd * .9],  // 오른쪽으로 꺾이며 화면 아래로 빠짐
-    [ .245, paraX(-.25), 1.08, .10],                 // 화면 왼쪽 아래 밖
+    [ .205, gx + .02, .86, gd * .6],  // 화면 아래쪽에서 꺾이며 (화면 밖으로 나가지 않고)
+    [ .245, paraX(.0), lineY(2) + .04, .1],         // 올라오는 다음 장면 문단 왼쪽으로 이어서 날아감
     [ .275, paraX(.12), lineY(1), .11],              // 문단 왼쪽으로 날아 들어와
     [ .305, paraX(.5), lineY(0) - .07, .13],         // 첫 줄 위로 크게 넘어가며
     [ .335, paraX(.78), lineY(2), .1],              // 오른쪽 아래로 휙 빠져나감
@@ -750,10 +751,10 @@ const CH = [
 const items = [...document.querySelectorAll('#menuRows li')];
 // 줄마다 사진 (img/menu1~4.webp)
 const PIC = [
-  'url(img/menu1.webp) center / 100% 100% no-repeat',   // Meet the Club: 선수
-  'url(img/menu2.webp) center / 100% 100% no-repeat',       // Follow the Ball: 가방·공
-  'url(img/menu3.webp) center / 100% 100% no-repeat',       // Our Sessions: 경기장
-  'url(img/menu4.webp) center / 100% 100% no-repeat',   // Join Us: 네트 앞 선수
+  'url(img/menu1.webp) center 30% / cover no-repeat',   // Meet the Club: 선수
+  'url(img/menu2.webp) center center / cover no-repeat',       // Follow the Ball: 가방·공
+  'url(img/menu3.webp) center center / cover no-repeat',       // Our Sessions: 경기장
+  'url(img/menu4.webp) center 30% / cover no-repeat',   // Join Us: 네트 앞 선수
 ];
 items.forEach((li, i) => { const m = document.createElement('div'); m.className = 'mf'; m.innerHTML = `<i style="background:${PIC[i]}"></i>`; li.appendChild(m); });
 const desc = document.getElementById('menuDesc');
