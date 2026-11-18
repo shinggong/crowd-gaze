@@ -761,12 +761,12 @@ const CH = [
   ['img/court.jpg', 'Spots are open for Season ’26. Drop us a line, then hit a few balls on the way out.', ['Email', 'Clickable ball rain'], ['rally', 0]],
 ];
 const items = [...document.querySelectorAll('#menuRows li')];
-// 줄마다 장면 사진 (Follow: 진녹색 위 공, Contact: 네온 공 무늬)
+// 줄마다 사진 (img/menu1~4.webp)
 const PIC = [
-  'url(frames/f12.jpg) center 30% / cover no-repeat',
-  '#4a5639 url(img/ball.webp) center / 46% no-repeat',
-  'url(img/court.jpg) center / cover no-repeat',
-  '#4a5639 radial-gradient(circle, #dcff2e 0 47%, transparent 49%) 0 0 / 22% 35%',
+  'url(img/menu1.webp) center 30% / cover no-repeat',   // Meet the Club: 선수
+  'url(img/menu2.webp) center / cover no-repeat',       // Follow the Ball: 가방·공
+  'url(img/menu3.webp) center / cover no-repeat',       // Our Sessions: 경기장
+  'url(img/menu4.webp) center 25% / cover no-repeat',   // Join Us: 네트 앞 선수
 ];
 items.forEach((li, i) => { const s = document.createElement('span'); s.className = 'pic'; s.innerHTML = `<i style="background:${PIC[i]}"></i>`; li.querySelector('button').prepend(s); });
 const desc = document.getElementById('menuDesc');
