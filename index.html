@@ -247,7 +247,7 @@ for (let i = 0; i < COUNT; i++) {
 const BOTTOM_CUT = .2;              // 첫 영상 아래쪽(초록 벽)을 영상 높이의 20% 잘라냄
 let R, SEAM;                        // 영상 위치, 연결부 높이
 function resize() {
-  if (!innerWidth || !innerHeight) return;           // 창 크기가 0일 때(숨김 등) 건너뜀
+  if (!innerWidth || !innerHeight || !frames[0] || !frames[0].naturalWidth) return;   // 창 크기 0이거나 첫 프레임 로딩 전이면 건너뜀
   const dpr = Math.min(devicePixelRatio || 1, 2);
   // 첫 화면 배치는 화면 크기 기준, 화면 아래로 넘치는 영상 하단은 자르지 않고 스크롤로 이어서 보여줌
   R = rect(frames[0], innerWidth * dpr, innerHeight * dpr);
@@ -483,9 +483,9 @@ const ballGL = (() => {
   void main(){
     vec2 uv = (gl_FragCoord.xy / uRes) * 2. - 1.;
     float R = 1. / 1.12, rr = length(uv) / R;
-    // 보송한 가장자리: 실루엣을 잔털 노이즈로 흐리게
-    float fuzz = noise(vec3(uv * 70., 3.)) - .5;
-    float alpha = 1. - smoothstep(.985, 1.045, rr + fuzz * .05);
+    // 가장자리: 털 번짐 없이 깔끔한 원 (안티앨리어싱만)
+    float aa = 3. / uRes.x;
+    float alpha = 1. - smoothstep(1. - aa, 1. + aa, rr);
     if (alpha <= 0.) { gl_FragColor = vec4(0.); return; }
     float rc = min(rr, .999);
     vec3 n = vec3(uv / R * (rc / max(rr, 1e-4)), 0.); n.z = sqrt(max(0., 1. - dot(n.xy, n.xy)));
