@@ -104,7 +104,7 @@
   #court { z-index: 3; background: #e48080; opacity: 0; will-change: clip-path; display: grid; place-items: center; }
   #court > * { grid-area: 1 / 1; }
   #court img { width: 100%; height: auto; display: block; }
-  #court video, #court img { display: block; will-change: transform;
+  #court canvas, #court img { display: block; will-change: transform;
     /* 영상 가장자리를 배경색으로 부드럽게 (브라우저마다 영상 색이 살짝 달라 박스 경계가 보이는 것 방지) */
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(transparent, #000 9%, #000 91%, transparent);
     -webkit-mask-composite: source-in; pointer-events: none; mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(transparent, #000 9%, #000 91%, transparent); mask-composite: intersect; }
@@ -186,7 +186,7 @@
 <section id="story">
   <div id="sticky">
     <div class="layer" id="back"></div>
-    <div class="layer" id="court"><video id="courtVideo" src="img/court.mp4" muted playsinline preload="auto"></video><img id="court0" src="img/court0.jpg" alt=""></div>
+    <div class="layer" id="court"><canvas id="courtVideo" width="1278" height="720"></canvas><img id="court0" src="img/court0.jpg" alt=""></div>
     <div id="castShadow"></div>
     <div id="ball"><div id="ballShadow"></div><div id="ballImg"><canvas id="ballGL"></canvas></div></div>
     <div class="layer" id="front"></div>
@@ -383,7 +383,19 @@ texts[texts.length - 1].depth = 0;              // 영상 아래 문장: 코트�
 const follow = texts[0];                         // 공이 'follow' 끝에 걸쳐 떠 있음
 const court = document.getElementById('court'), courtVideo = document.getElementById('courtVideo'), menu = document.getElementById('menu');
 // Safari 등에서 스크롤로 프레임 이동이 화면에 반영되도록 한 번 재생했다 멈춤 (음소거라 허용됨)
-courtVideo.addEventListener('loadeddata', () => { const pr = courtVideo.play(); pr && pr.then(() => courtVideo.pause()).catch(() => {}); }, { once: true });
+// 테니스 영상: 동영상 대신 프레임 이미지 90장을 캔버스에 그림 (사파리에서도 스크롤로 확실히 움직이게)
+const CF = 90, courtFrames = [], cctx = courtVideo.getContext('2d');
+let lastCF = -1;
+function drawCourt(i) {
+  let j = i; while (j >= 0 && !(courtFrames[j] && courtFrames[j].complete && courtFrames[j].naturalWidth)) j--;   // 아직 안 불러온 장면이면 가장 가까운 앞 장면
+  if (j < 0) return false;
+  cctx.drawImage(courtFrames[j], 0, 0, 1278, 720); return j === i;
+}
+for (let i = 0; i < CF; i++) {
+  const im = new Image(); im.decoding = 'async'; im.src = `court/c${String(i).padStart(2, '0')}.jpg`;
+  if (i === 0) im.onload = () => { if (lastCF < 0) drawCourt(0); };
+  courtFrames.push(im);
+}
 const court0 = document.getElementById('court0');   // 공 지운 첫 프레임 (3D 공 도착 전까지 영상 위에 덮음)
 let CVW = 1;                                   // 화면에 표시되는 영상 너비
 
@@ -577,9 +589,7 @@ function frame() {
   const K = keyframes();
   let [bx, by, bd] = path(p, K);
   const D = bd * VM, X = bx * VW, Y = by * VH;
-  // 문단 장면에서 공이 올라가는 동안은 글자 뒤로 지나가고(글자가 공 위), 꼭대기부터는 글자 앞으로
-  const behind = p > .25 && p < .292;
-  if (!behind) push(X, Y, D); else push(-9999, -9999, 0);
+  push(X, Y, D);
   const shA = clamp((p - .29) / .01) * clamp((.355 - p) / .015);   // 공이 글자 앞에 있을 때만 그림자
   castShadow.style.opacity = shA;
   if (shA > 0) { const sw = D * 1.05; castShadow.style.width = sw + 'px'; castShadow.style.height = sw * .8 + 'px';
@@ -591,7 +601,7 @@ function frame() {
   const handoff = clamp((V_IN - p) / .006);          // 1: 3D 공 / 0: 영상 속 공
   ball.style.opacity = handoff;                      // 영상 속 공 자리에 닿으면 사라지고 이후 다시 안 나옴
   court0.style.opacity = handoff;
-  ball.style.zIndex = behind ? 0 : 9;                 // 평소엔 모든 것 위, 문단 뒤로 지나갈 땐 글자 아래
+  ball.style.zIndex = 9;                              // 항상 글자·영상 위
   // 회전은 천천히: 3D 공은 구 자체를 돌리고, 실패 시 이미지만 살짝 회전
   if (ballGL) { if (handoff > 0) ballGL(D, .5 + p * 5, -.6 + p * 14); }
   else ballImg.style.transform = `rotate(${p * 160}deg)`;
@@ -612,9 +622,9 @@ function frame() {
   menu.classList.toggle('live', Math.abs(mo) < .05);
   menu.classList.toggle('shown', Math.abs(mo) < .6);
   // 스크롤에 맞춰 영상 진행 (재생 대신 스크롤 위치로 프레임 이동)
-  if (courtVideo.duration) {
-    const tt = clamp((p - V_IN) / (V_OUT - V_IN)) * (courtVideo.duration - .05);
-    if (Math.abs(courtVideo.currentTime - tt) > 1 / 30) courtVideo.currentTime = tt;
+  {
+    const fi = Math.round(clamp((p - V_IN) / (V_OUT - V_IN)) * (CF - 1));
+    if (fi !== lastCF && drawCourt(fi)) lastCF = fi;
   }
 
 }
