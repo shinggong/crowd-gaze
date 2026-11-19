@@ -33,7 +33,7 @@
   body::after { content: ""; position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: .22; mix-blend-mode: overlay;
     background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
   /* 공 그림자: 공 아래쪽에 흐린 그림자 → 떠 있는 느낌 */
-  #ballShadow { position: absolute; left: 16%; top: 42%; width: 92%; height: 86%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.7), rgba(0,0,0,.35) 60%, transparent); filter: blur(8px); }
+  #ballShadow { position: absolute; left: 16%; top: 42%; width: 92%; height: 86%; border-radius: 50%; background: radial-gradient(closest-side, rgba(22,30,14,.42), rgba(22,30,14,.18) 60%, transparent); filter: blur(10px); }   /* 검정 대신 배경과 어울리는 진녹색 그림자, 연하게 */
   #ballImg { position: relative; width: 100%; height: 100%; background: url(img/ball.webp) center / contain no-repeat; }
   #ballImg.gl { background: none; }
   #ballGL { position: absolute; left: -6%; top: -6%; width: 112%; height: 112%; display: block; }
@@ -247,6 +247,7 @@ for (let i = 0; i < COUNT; i++) {
 const BOTTOM_CUT = .2;              // 첫 영상 아래쪽(초록 벽)을 영상 높이의 20% 잘라냄
 let R, SEAM;                        // 영상 위치, 연결부 높이
 function resize() {
+  if (!innerWidth || !innerHeight) return;           // 창 크기가 0일 때(숨김 등) 건너뜀
   const dpr = Math.min(devicePixelRatio || 1, 2);
   // 첫 화면 배치는 화면 크기 기준, 화면 아래로 넘치는 영상 하단은 자르지 않고 스크롤로 이어서 보여줌
   R = rect(frames[0], innerWidth * dpr, innerHeight * dpr);
@@ -502,7 +503,8 @@ const ballGL = (() => {
     vec3 L = normalize(vec3(-.55, .65, .75));
     float diff = max(dot(n, L), 0.);
     float wrap = max((dot(n, L) + .35) / 1.35, 0.);
-    col *= .28 + .55 * wrap + .35 * diff;
+    col *= .46 + .45 * wrap + .3 * diff;            // 어두운 면도 까맣게 죽지 않게
+    col += felt * vec3(.10, .12, .05) * max(-n.y, 0.);   // 아래쪽 반사광 (바닥 초록빛)
     col += vec3(.06, .07, .02) * pow(1. - n.z, 3.) * (.5 + fine);
     col += .05 * pow(max(dot(reflect(-L, n), vec3(0., 0., 1.)), 0.), 10.) * (1. - line * .5);
     gl_FragColor = vec4(col * alpha, alpha);
@@ -574,7 +576,7 @@ function frame() {
   court0.style.opacity = handoff;
   ball.style.zIndex = 9;                              // 내려오는 동안 올라오는 영상보다 위
   // 회전은 천천히: 3D 공은 구 자체를 돌리고, 실패 시 이미지만 살짝 회전
-  if (ballGL) { if (handoff > 0) ballGL(D, .5 + p * 1.1, -.6 + p * 2.6); }
+  if (ballGL) { if (handoff > 0) ballGL(D, .5 + p * 5, -.6 + p * 14); }
   else ballImg.style.transform = `rotate(${p * 160}deg)`;
 
 
