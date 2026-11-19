@@ -12,8 +12,8 @@
   #stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   /* 영상 아래를 다음 텍스트 화면 배경색(#333d28)으로 자연스럽게 이어줌 */
   #hero { isolation: isolate; }   /* 그라데이션이 히어로 안에만 머물러, 내려오는 공을 가리지 않게 */
-  #hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 24%; z-index: 1; pointer-events: none;
-    background: linear-gradient(to bottom, rgba(51,61,40,0) 0%, rgba(51,61,40,.35) 35%, rgba(51,61,40,.85) 70%, #333d28 100%); }
+  #hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 34%; z-index: 1; pointer-events: none;
+    background: linear-gradient(to bottom, rgba(51,61,40,0) 0%, rgba(51,61,40,.18) 14%, rgba(51,61,40,.5) 30%, rgba(51,61,40,.82) 48%, rgba(51,61,40,.96) 64%, #333d28 78%); }
   #title { position: absolute; top: max(4vh, 24px); left: max(4vw, 24px); margin: 0; z-index: 2; pointer-events: none;
     color: #2f4a35; font: italic 700 clamp(30px, min(5.2vw, 6.8vh), 80px)/0.95 "Didot", "Bodoni 72", Georgia, serif; letter-spacing: -0.02em; }
   #title small { display: block; margin-top: 0.6em; font: 600 clamp(10px, .8vw, 12px)/1 -apple-system, "Pretendard", sans-serif;
