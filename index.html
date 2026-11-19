@@ -496,9 +496,14 @@ const ballGL = (() => {
     felt *= .82 + .28 * fine + .12 * (hair - .5);
     // 솔기: 흰 고무 줄 + 양옆 살짝 패인 그림자
     float d = seamDist(q);
-    float line = 1. - smoothstep(.032, .043, d);
+    float line = 1. - smoothstep(.032, .043, d + (hair - .5) * .008);   // 경계는 털이 살짝 덮은 듯 들쭉날쭉
     float groove = mix(.7, 1., smoothstep(.04, .085, d));
-    vec3 col = mix(felt * groove, vec3(.95, .94, .86) * (.92 + .08 * fine), line);
+    // 흰 솔기 질감: 고무의 잔 구멍·얼룩 + 가운데가 볼록한 관 모양 음영
+    float pore = noise(q * 320.), blot = fbm(q * 22.);
+    vec3 white = mix(vec3(.90, .89, .80), vec3(.97, .96, .90), blot);
+    white *= .84 + .12 * fine + .10 * (hair - .5) + .08 * (pore - .5);
+    white *= mix(1., .82, smoothstep(.012, .04, d));
+    vec3 col = mix(felt * groove, white, line);
     // 빛: 왼쪽 위에서 부드럽게, 가장자리는 털 때문에 살짝 밝게 번짐
     vec3 L = normalize(vec3(-.55, .65, .75));
     float diff = max(dot(n, L), 0.);
